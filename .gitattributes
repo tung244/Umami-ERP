@@ -61,3 +61,10 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# Linguist overrides (GitHub Language Detection)
+###############################################################################
+wwwroot/* linguist-vendored
+*.html linguist-vendored
+
