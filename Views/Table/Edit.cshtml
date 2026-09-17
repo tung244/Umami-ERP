@@ -1,0 +1,141 @@
+@model QuanLiKhoHang.Models.Entities.RestaurantTable
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var table = Model as RestaurantTable;
+    var branches = ViewBag.Branches as List<Branch>;
+}
+
+@if (table == null)
+{
+    <div class="alert alert-danger">
+        <h4><i class="icon fas fa-ban"></i> Lỗi!</h4>
+        Không tìm thấy bàn ăn.
+    </div>
+}
+else
+{
+    <div class="content-wrapper">
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="~/Dashboard">Trang chủ</a></li>
+                            <li class="breadcrumb-item"><a href="~/Table">Quản lý bàn ăn</a></li>
+                            <li class="breadcrumb-item active">@ViewBag.Title</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Chỉnh sửa thông tin bàn ăn</h3>
+                            </div>
+
+                            <form method="post" class="card-body">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="TableId" value="@table.TableId" />
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="Code">Mã bàn <span class="text-danger">*</span></label>
+                                            <input type="text" id="Code" name="Code" class="form-control" required maxlength="20" value="@table.Code" />
+                                            <small class="form-text text-muted">Mã bàn phải là duy nhất trong hệ thống</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="Name">Tên bàn <span class="text-danger">*</span></label>
+                                            <input type="text" id="Name" name="Name" class="form-control" required maxlength="100" value="@table.Name" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="BranchId">Chi nhánh <span class="text-danger">*</span></label>
+                                            <select id="BranchId" name="BranchId" class="form-control" required>
+                                                <option value="">Chọn chi nhánh</option>
+                                                @if (branches != null)
+                                                {
+                                                    foreach (var branch in branches)
+                                                    {
+                                                        <option value="@branch.BranchId" selected="@(table.BranchId == branch.BranchId ? "selected" : null)">@branch.Name</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="Area">Khu vực <span class="text-danger">*</span></label>
+                                            <input type="text" id="Area" name="Area" class="form-control" required maxlength="100" value="@table.Area" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="Seats">Số ghế <span class="text-danger">*</span></label>
+                                            <input type="number" id="Seats" name="Seats" class="form-control" required min="1" max="20" value="@table.Seats" />
+                                            <small class="form-text text-muted">Số lượng ghế ngồi (1-20)</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="IsOutdoor">Vị trí bàn <span class="text-danger">*</span></label>
+                                            <select id="IsOutdoor" name="IsOutdoor" class="form-control" required>
+                                                <option value="false" selected="@(!table.IsOutdoor ? "selected" : null)">Trong nhà</option>
+                                                <option value="true" selected="@(table.IsOutdoor ? "selected" : null)">Ngoài trời</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="Status">Trạng thái</label>
+                                            <select id="Status" name="Status" class="form-control">
+                                                <option value="Available" selected="@(table.Status == TableStatus.Available ? "selected" : null)">Trống</option>
+                                                <option value="Occupied" selected="@(table.Status == TableStatus.Occupied ? "selected" : null)">Đang sử dụng</option>
+                                                <option value="Reserved" selected="@(table.Status == TableStatus.Reserved ? "selected" : null)">Đã đặt</option>
+                                                <option value="OutOfService" selected="@(table.Status == TableStatus.OutOfService ? "selected" : null)">Bảo trì</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Cập nhật bàn ăn
+                                    </button>
+                                    <a href="~/Table/Details/@table.TableId" class="btn btn-info">
+                                        <i class="fas fa-eye"></i> Xem chi tiết
+                                    </a>
+                                    <a href="~/Table" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+}

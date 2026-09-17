@@ -1,0 +1,197 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var items = ViewBag.Items as List<Customer>;
+    int page = (int)ViewBag.CurrentPage;
+    int total = (int)ViewBag.TotalPages;
+    string search = (string)ViewBag.SearchTerm;
+    string searchName = (string)ViewBag.SearchName;
+    string searchPhone = (string)ViewBag.SearchPhone;
+    string searchEmail = (string)ViewBag.SearchEmail;
+    string sort = (string)ViewBag.SortOrder;
+    bool? isActive = ViewBag.IsActive;
+    Guid? branchId = ViewBag.BranchId;
+    LoyaltyTier? tier = ViewBag.Tier;
+    var branches = ViewBag.Branches as List<Branch>;
+    var loyaltyTiers = ViewBag.LoyaltyTiers as List<dynamic>;
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">@ViewBag.Title</h4>
+                <div class="card-tools">
+                    <a href="@Url.Action("Create")" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Thêm khách hàng
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <form method="get" class="mb-3">
+                    <div class="row mb-3">
+                        <!-- Tìm theo tên -->
+                        <div class="col-md-3">
+                            <input type="text" name="searchName" value="@searchName" class="form-control" placeholder="Tìm theo tên..." />
+                        </div>
+                        <!-- Tìm theo SĐT -->
+                        <div class="col-md-3">
+                            <input type="text" name="searchPhone" value="@searchPhone" class="form-control" placeholder="Tìm theo số điện thoại..." />
+                        </div>
+                        <!-- Tìm theo email -->
+                        <div class="col-md-3">
+                            <input type="text" name="searchEmail" value="@searchEmail" class="form-control" placeholder="Tìm theo email..." />
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <!-- Lọc theo chi nhánh -->
+                        <div class="col-md-3">
+                            <select name="branchId" class="form-control">
+                                <option value="">-- Chọn chi nhánh --</option>
+                                @foreach (var branch in branches ?? new List<Branch>())
+                                {
+                                    <option value="@branch.BranchId" selected="@(branch.BranchId == branchId)">@branch.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <!-- Lọc theo trạng thái -->
+                        <div class="col-md-3">
+                            <select name="isActive" class="form-control">
+                                <option value="">-- Chọn trạng thái --</option>
+                                <option value="true" selected="@(isActive == true)">Hoạt động</option>
+                                <option value="false" selected="@(isActive == false)">Ngừng hoạt động</option>
+                            </select>
+                        </div>                
+                        <!-- Sắp xếp -->
+                        <div class="col-md-3">
+                            <select name="sort" class="form-control">
+                                <option value="default" selected="@(sort == "default")">-- Sắp xếp theo --</option>
+                                <option value="name" selected="@(sort == "name")">Tên (A-Z)</option>
+                                <option value="nameDesc" selected="@(sort == "nameDesc")">Tên (Z-A)</option>
+                                <option value="email" selected="@(sort == "email")">Email</option>
+                                <option value="phone" selected="@(sort == "phone")">Số điện thoại</option>
+                                <option value="branch" selected="@(sort == "branch")">Chi nhánh</option>
+                                <option value="status" selected="@(sort == "status")">Trạng thái</option>
+                                <option value="tier" selected="@(sort == "tier")">Hạng thành viên</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 text-center">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </button>
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                <i class="fas fa-redo"></i> Đặt lại bộ lọc
+                            </a>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>Họ tên</th>
+                                <th>Email</th>
+                                <th>Số điện thoại</th>
+                                <th>Chi nhánh ưa thích</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (items != null && items.Any())
+                            {
+                                @foreach (var customer in items)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@customer.FullName</strong>
+                                        </td>
+                                        <td>@(string.IsNullOrEmpty(customer.Email) ? "-" : customer.Email)</td>
+                                        <td>@(string.IsNullOrEmpty(customer.PhoneNumber) ? "-" : customer.PhoneNumber)</td>
+                                        <td>@(customer.PreferredBranch?.Name ?? "Chưa chọn")</td>
+                                        <td>
+                                            @if (customer.IsActive)
+                                            {
+                                                <span style="color: green;" class="badge badge-success">Hoạt động</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: red;" class="badge badge-secondary">Ngừng hoạt động</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="@Url.Action("Details", new { id = customer.CustomerId })" class="btn btn-info btn-sm" title="Xem chi tiết">
+                                                    <i class="fas fa-address-book"></i>
+                                                </a>
+                                                <a href="@Url.Action("Edit", new { id = customer.CustomerId })" class="btn btn-warning btn-sm" title="Chỉnh sửa">
+                                                    <i class="fas fa-pen"></i>
+                                                </a>
+                                                @if (customer.IsActive)
+                                                {
+                                                    <form method="post" action="@Url.Action("Delete", new { id = customer.CustomerId })" style="display:inline;" 
+                                                          onsubmit="return confirm('Bạn có chắc chắn muốn ngừng hoạt động khách hàng này?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-danger btn-sm" title="Ngừng hoạt động">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        <i class="fas fa-users fa-2x mb-2"></i>
+                                        <br />
+                                        Không có dữ liệu khách hàng
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (total > 1)
+                {
+                    <div class="d-flex justify-content-center">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                @if (page > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = page - 1, search, sort })">Trước</a>
+                                    </li>
+                                }
+
+                                @for (int i = Math.Max(1, page - 2); i <= Math.Min(total, page + 2); i++)
+                                {
+                                    <li class="page-item @(i == page ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i, search, sort })">@i</a>
+                                    </li>
+                                }
+
+                                @if (page < total)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = page + 1, search, sort })">Sau</a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

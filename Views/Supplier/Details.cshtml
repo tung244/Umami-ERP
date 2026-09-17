@@ -1,0 +1,48 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var item = ViewBag.Item as Supplier;
+}
+
+<h3>@ViewBag.Title</h3>
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+
+            <dt class="col-sm-3">Tên</dt>
+            <dd class="col-sm-9">@item?.Name</dd>
+
+            <dt class="col-sm-3">Mã nhà cung cấp</dt>
+            <dd class="col-sm-9">@item?.SupplierCode</dd>
+
+            <dt class="col-sm-3">Người liên hệ</dt>
+            <dd class="col-sm-9">@item?.PrimaryContactName</dd>
+
+            <dt class="col-sm-3">Điện thoại</dt>
+            <dd class="col-sm-9">@item?.Phone</dd>
+
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">@item?.Email</dd>
+
+            <dt class="col-sm-3">Địa chỉ</dt>
+            <dd class="col-sm-9">@item?.Address</dd>
+
+            <dt class="col-sm-3">Điều khoản thanh toán</dt>
+            <dd class="col-sm-9">@item?.PaymentTerms</dd>
+
+            <dt class="col-sm-3">Tiền tệ</dt>
+            <dd class="col-sm-9">@item?.Currency</dd>
+
+            <dt class="col-sm-3">Trạng thái</dt>
+            <dd class="col-sm-9">@(item?.IsActive == true ? "Hoạt động" : "Không hoạt động")</dd>
+
+            <dt class="col-sm-3">Ngày tạo</dt>
+            <dd class="col-sm-9">@item?.CreatedAt.ToString("dd/MM/yyyy")</dd>
+
+            <dt class="col-sm-3">Cập nhật lần cuối</dt>
+            <dd class="col-sm-9">@(item?.UpdatedAt?.ToString("dd/MM/yyyy") ?? "-")</dd>
+        </dl>
+        <a href="@Url.Action("Edit", new { id = item?.SupplierId })" class="btn btn-warning">Sửa</a>
+        <a href="@Url.Action("TransactionHistory", new { id = item?.SupplierId })" class="btn btn-primary">Lịch sử giao dịch</a>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+    </div>
+</div>

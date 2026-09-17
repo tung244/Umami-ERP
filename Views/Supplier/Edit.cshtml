@@ -1,0 +1,82 @@
+@using QuanLiKhoHang.Models.Entities
+@model Supplier
+@{
+    ViewBag.Title = ViewBag.Title ?? "Chỉnh sửa nhà cung cấp";
+}
+
+<h3>@ViewBag.Title</h3>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="SupplierId" value="@Model.SupplierId" />
+    <input type="hidden" name="CreatedAt" value="@Model.CreatedAt.ToString("o")" />
+
+    <div class="mb-3">
+        <label class="form-label">Tên <span class="text-danger">*</span></label>
+        <input name="Name" value="@Model.Name" class="form-control" required maxlength="128" />
+        @Html.ValidationMessage("Name", new { @class = "text-danger" })
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Mã nhà cung cấp <span class="text-danger">*</span></label>
+        <input name="SupplierCode" value="@Model.SupplierCode" class="form-control" readonly maxlength="32" />
+        @Html.ValidationMessage("SupplierCode", new { @class = "text-danger" })
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Người liên hệ</label>
+        <input name="PrimaryContactName" value="@Model.PrimaryContactName" class="form-control" maxlength="128" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Số điện thoại</label>
+        <input name="Phone" value="@Model.Phone" class="form-control" maxlength="32" />
+        @Html.ValidationMessage("Phone", new { @class = "text-danger" })
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input name="Email" value="@Model.Email" type="email" class="form-control" maxlength="128" />
+        @Html.ValidationMessage("Email", new { @class = "text-danger" })
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Địa chỉ</label>
+        <textarea name="Address" class="form-control" rows="3">@Model.Address</textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Điều khoản thanh toán</label>
+        <input name="PaymentTerms" value="@Model.PaymentTerms" class="form-control" maxlength="32" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Tiền tệ</label>
+        <input name="Currency" value="@Model.Currency" class="form-control" maxlength="8" placeholder="VND, USD, ..." />
+    </div>
+
+    <div class="mb-3">
+        <div class="form-check">
+            @* Hidden input ensures a value is posted when checkbox is unchecked *@
+            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+            <label class="form-check-label" for="IsActive">
+                Đang hoạt động
+            </label>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label text-muted">Ngày tạo: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</label>
+        @if (Model.UpdatedAt.HasValue)
+        {
+            <br />
+            <label class="form-label text-muted">
+                Cập nhật lần cuối: @Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")
+            </label>
+        }
+    </div>
+
+    <div class="mb-3">
+        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+    </div>
+</form>

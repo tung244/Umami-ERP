@@ -1,0 +1,135 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var item = ViewBag.Item as InventoryItem;
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">@ViewBag.Title</h4>
+                <div class="card-tools">
+                    <a href="@Url.Action("Details", new { id = item?.ItemId })" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body">
+                @if (item != null)
+                {
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary"><i class="fas fa-box"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Mặt hàng</span>
+                                    <span class="info-box-number">@item.Name</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-primary" style="width: 100%"></div>
+                                    </div>
+                                    <span class="progress-description">
+                                        SKU: @(string.IsNullOrEmpty(item.Sku) ? "N/A" : item.Sku)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success"><i class="fas fa-warehouse"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Tồn kho hiện tại</span>
+                                    <span class="info-box-number">@item.CurrentQuantity @item.Unit</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                                    </div>
+                                    <span class="progress-description">
+                                        Giá nhập: <strong style="font-size: 1.2em; color: #0066cc;">@string.Format("{0:N2}", item.CostPerUnit)</strong> VND/@item.Unit
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" class="needs-validation" novalidate>
+                        @Html.AntiForgeryToken()
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="quantity">Số lượng nhập *</label>
+                                    <input type="number" class="form-control"
+                                           id="quantity" name="quantity" min="1" step="1"
+                                           placeholder="Nhập số lượng..." required />
+                                    @Html.ValidationMessage("quantity", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">Số lượng phải lớn hơn 0</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="notes">Ghi chú</label>
+                                    <textarea class="form-control" id="notes" name="notes" rows="3"
+                                              placeholder="Nhập ghi chú (tùy chọn)..."></textarea>
+                                    <small class="form-text text-muted">Ví dụ: Nhập từ nhà cung cấp ABC, lô hàng XYZ</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Thông tin giao dịch:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li>Số lượng sẽ được cộng vào tồn kho hiện tại</li>
+                                        <li>Giao dịch sẽ được ghi nhận với loại "Nhập mua"</li>
+                                        <li>Thời gian: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-plus-circle"></i> Xác nhận nhập kho
+                                </button>
+                                <a href="@Url.Action("Details", new { id = item.ItemId })" class="btn btn-secondary btn-lg ml-2">
+                                    <i class="fas fa-times"></i> Hủy bỏ
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Không tìm thấy thông tin mặt hàng!
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    </script>
+}

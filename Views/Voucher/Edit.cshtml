@@ -1,0 +1,188 @@
+@using QuanLiKhoHang.Models.Entities
+@model Voucher
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Chỉnh sửa voucher</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="/">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">Voucher</a></li>
+                        <li class="breadcrumb-item active">Chỉnh sửa</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Thông tin voucher</h3>
+                        </div>
+
+                        <form asp-action="Edit" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="VoucherId" />
+                            <input type="hidden" asp-for="CreatedAt" />
+
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="Code">Mã voucher <span class="text-danger">*</span></label>
+                                            <input asp-for="Code" class="form-control" placeholder="Ví dụ: WELCOME2024">
+                                            <span asp-validation-for="Code" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="Description">Mô tả voucher <span class="text-danger">*</span></label>
+                                            <input asp-for="Description" class="form-control" placeholder="Ví dụ: Giảm giá mừng khai trương">
+                                            <span asp-validation-for="Description" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="DiscountType">Loại giảm giá <span class="text-danger">*</span></label>
+                                            <select asp-for="DiscountType" class="form-control" onchange="toggleDiscountValueField()">
+                                                <option value="">-- Chọn loại giảm giá --</option>
+                                                <option value="@QuanLiKhoHang.Models.Enums.VoucherDiscountType.Percentage">Phần trăm (%)</option>
+                                                <option value="@QuanLiKhoHang.Models.Enums.VoucherDiscountType.FixedAmount">Số tiền cố định (VND)</option>
+                                                <option value="@QuanLiKhoHang.Models.Enums.VoucherDiscountType.FreeItem">Miễn phí món</option>
+                                            </select>
+                                            <span asp-validation-for="DiscountType" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="DiscountValue">Giá trị giảm giá <span class="text-danger">*</span></label>
+                                            <input asp-for="DiscountValue" class="form-control" type="number" step="0.01" min="0" placeholder="Nhập giá trị">
+                                            <span asp-validation-for="DiscountValue" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="TotalUsageLimit">Giới hạn sử dụng tổng</label>
+                                            <input asp-for="TotalUsageLimit" class="form-control" type="number" min="1" placeholder="Ví dụ: 100">
+                                            <span asp-validation-for="TotalUsageLimit" class="text-danger"></span>
+                                            <small class="form-text text-muted">Tổng số lần voucher có thể được sử dụng</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="UsageLimitPerCustomer">Giới hạn mỗi khách</label>
+                                            <input asp-for="UsageLimitPerCustomer" class="form-control" type="number" min="1" placeholder="Ví dụ: 1">
+                                            <span asp-validation-for="UsageLimitPerCustomer" class="text-danger"></span>
+                                            <small class="form-text text-muted">Số lần mỗi khách hàng có thể sử dụng voucher</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="ValidFrom">Ngày bắt đầu <span class="text-danger">*</span></label>
+                                            <input asp-for="ValidFrom" class="form-control" type="datetime-local" required>
+                                            <span asp-validation-for="ValidFrom" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="ValidTo">Ngày kết thúc <span class="text-danger">*</span></label>
+                                            <input asp-for="ValidTo" class="form-control" type="datetime-local" required>
+                                            <span asp-validation-for="ValidTo" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="MinimumOrderAmount">Đơn hàng tối thiểu</label>
+                                            <input asp-for="MinimumOrderAmount" class="form-control" type="number" step="0.01" min="0" placeholder="Ví dụ: 50000">
+                                            <span asp-validation-for="MinimumOrderAmount" class="text-danger"></span>
+                                            <small class="form-text text-muted">Giá trị đơn hàng tối thiểu để áp dụng voucher (VND)</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Description">Mô tả</label>
+                                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Mô tả chi tiết về voucher..."></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="custom-control custom-checkbox">
+                                        <input asp-for="IsActive" class="custom-control-input">
+                                        <label asp-for="IsActive" class="custom-control-label">Kích hoạt voucher</label>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Ngày tạo</label>
+                                            <input type="text" class="form-control" value="@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Lần cuối cập nhật</label>
+                                            <input type="text" class="form-control" value="@(Model.UpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa cập nhật")" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-footer">
+                                <button type="submit" class="btn btn-primary">Cập nhật voucher</button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleDiscountValueField() {
+            const discountType = document.getElementById('DiscountType').value;
+            const discountValueInput = document.getElementById('DiscountValue');
+
+            if (discountType === '@QuanLiKhoHang.Models.Enums.VoucherDiscountType.Percentage') {
+                discountValueInput.max = 100;
+                discountValueInput.placeholder = 'Nhập phần trăm (0-100)';
+            } else if (discountType === '@QuanLiKhoHang.Models.Enums.VoucherDiscountType.FixedAmount') {
+                discountValueInput.removeAttribute('max');
+                discountValueInput.placeholder = 'Nhập số tiền (VND)';
+            } else if (discountType === '@QuanLiKhoHang.Models.Enums.VoucherDiscountType.FreeItem') {
+                discountValueInput.placeholder = 'Nhập số lượng món miễn phí';
+            } else {
+                discountValueInput.placeholder = 'Nhập giá trị';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleDiscountValueField();
+        });
+    </script>
+}

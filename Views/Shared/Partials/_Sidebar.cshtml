@@ -1,0 +1,326 @@
+@using QuanLiKhoHang.Extensions;
+@using QuanLiKhoHang.Constants;
+
+@{
+}
+<aside class="sidebar">
+    <button type="button" class="sidebar-close-btn" title="Đóng">
+        <i class="ri-close-line"></i>
+    </button>
+    <div>
+        <a href="@Url.Action("Index2", "Dashboard")" class="sidebar-logo">
+            <img style="width: 200px;"
+                src="https://res.cloudinary.com/dxnoonrrd/image/upload/v1763259054/Hehe_Restaurant_uu4kpf.png"
+                alt="site logo" class="light-logo">
+            <img style="width: 200px;"
+                src="https://res.cloudinary.com/dxnoonrrd/image/upload/v1763259054/Hehe_Restaurant_uu4kpf.png"
+                alt="site logo" class="dark-logo">
+            <img style="width: 200px;"
+                src="https://res.cloudinary.com/dxnoonrrd/image/upload/v1763259054/Hehe_Restaurant_uu4kpf.png"
+                alt="site logo" class="logo-icon">
+        </a>
+    </div>
+    <div class="sidebar-menu-area">
+        <ul class="sidebar-menu" id="sidebar-menu">
+            <li class="dropdown">
+                <a href="javascript:void(0)" title="Dashboard">
+                    <i class="ri-home-4-line menu-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+                <ul class="sidebar-submenu">
+                    <li>
+                        <a href="@Url.Action("Index2", "Dashboard")"><i
+                                class="ri-circle-fill circle-icon text-primary-600 w-auto"></i> Tổng quan</a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="sidebar-menu-group-title">Quản lý nhà hàng</li>
+
+            <li class="dropdown">
+                <a href="javascript:void(0)" title="Quản lý thực đơn">
+                    <i class="ri-restaurant-2-line menu-icon"></i>
+                    <span>Quản lý thực đơn</span>
+                </a>
+                <ul class="sidebar-submenu">
+                    @if (User.HasPermission(PermissionConstants.VIEW_CATEGORY))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Category")"><i
+                                    class="ri-circle-fill circle-icon text-primary-600 w-auto"></i> Danh mục món ăn</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.VIEW_DISH))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Dish")"><i
+                                    class="ri-circle-fill circle-icon text-warning-main w-auto"></i> Món ăn</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.VIEW_MENU_PRICE_HISTORY))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "MenuPriceHistory")"><i
+                                    class="ri-circle-fill circle-icon text-info-main w-auto"></i> Lịch sử giá</a>
+                        </li>
+                    }
+                </ul>
+            </li>
+
+            <li class="dropdown">
+                <a href="javascript:void(0)" title="Quản lý kho">
+                    <i class="ri-store-2-line menu-icon"></i>
+                    <span>Quản lý kho</span>
+                </a>
+                <ul class="sidebar-submenu">
+                    <li>
+                        <a href="@Url.Action("Index", "Inventory")"><i
+                                class="ri-circle-fill circle-icon text-primary-600 w-auto"></i> Quản lí vật phẩm</a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("StockInList", "Inventory")"><i
+                                class="ri-circle-fill circle-icon text-success-main w-auto"></i> Nhập kho</a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("StockOutList", "Inventory")"><i
+                                class="ri-circle-fill circle-icon text-warning-main w-auto"></i> Xuất kho</a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("Stocktaking", "Inventory")"><i
+                                class="ri-circle-fill circle-icon text-info-main w-auto"></i> Kiểm kê hàng ngày</a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("DailyReport", "Inventory")"><i
+                                class="ri-circle-fill circle-icon text-info-main w-auto"></i> Báo cáo giao dịch hàng
+                            ngày</a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("Index", "StockAlert")"><i
+                                class="ri-circle-fill circle-icon text-danger w-auto"></i> Cấu hình cảnh báo kho</a>
+                    </li>
+                    @* <li>
+                        <a href="@Url.Action("Index", "StorageLocation")"><i class="ri-circle-fill circle-icon text-secondary-main w-auto"></i> Quản lý khu vực lưu trữ</a>
+                    </li> *@
+                </ul>
+            </li>
+
+            <li class="dropdown">
+                <a href="javascript:void(0)" title="Quản lý nhân viên">
+                    <i class="ri-group-line menu-icon"></i>
+                    <span>Quản lý nhân viên</span>
+                </a>
+                <ul class="sidebar-submenu">
+                    @if (User.HasPermission(PermissionConstants.VIEW_STAFF))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Staff")"><i
+                                    class="ri-circle-fill circle-icon text-primary-600 w-auto"></i> Danh sách nhân viên</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.VIEW_PAYROLL))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Payroll")"><i
+                                    class="ri-circle-fill circle-icon text-warning-main w-auto"></i> Bảng lương</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.MANAGE_ROLES_AND_PERMISSIONS))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "RolesAndAccess")"><i
+                                    class="ri-circle-fill circle-icon text-info-main w-auto"></i> Phân quyền</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.VIEW_SHIFT))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Shift")"><i
+                                    class="ri-circle-fill circle-icon text-success-main w-auto"></i> Lịch làm việc</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.VIEW_ATTENDANCE))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Attendance")"><i
+                                    class="ri-circle-fill circle-icon text-success-main w-auto"></i> Chấm công</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("DailyAttendance", "Attendance")"><i
+                                    class="ri-circle-fill circle-icon text-info-main w-auto"></i> Điểm danh hàng ngày</a>
+                        </li>
+                    }
+                </ul>
+            </li>
+
+            <li class="dropdown">
+                <a href="javascript:void(0)" title="Quản lý khách hàng">
+                    <i class="ri-user-star-line menu-icon"></i>
+                    <span>Quản lý khách hàng</span>
+                </a>
+                <ul class="sidebar-submenu">
+                    @if (User.HasPermission(PermissionConstants.VIEW_CUSTOMER))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Customer")"><i
+                                    class="ri-circle-fill circle-icon text-primary-600 w-auto"></i> Danh sách khách hàng</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.MANAGE_VOUCHER))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Voucher")"><i
+                                    class="ri-circle-fill circle-icon text-info-main w-auto"></i> Voucher & Khuyến mãi</a>
+                        </li>
+                    }
+                    <li>
+                        <a href="#"><i class="ri-circle-fill circle-icon text-success-main w-auto"></i> Lịch sử mua
+                            hàng</a>
+                    </li>
+                </ul>
+            </li>
+
+            @if (User.HasPermission(PermissionConstants.MANAGE_LOYALTY))
+            {
+                <li class="dropdown">
+                    <a href="javascript:void(0)" title="Chương trình thân thiết">
+                        <i class="ri-star-line menu-icon"></i>
+                        <span>Chương trình thân thiết</span>
+                    </a>
+                    <ul class="sidebar-submenu">
+                        <li>
+                            <a href="@Url.Action("Index", "Loyalty")"><i
+                                    class="ri-circle-fill circle-icon text-primary-600 w-auto"></i> Tổng quan</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "LoyaltySettings")"><i
+                                    class="ri-circle-fill circle-icon text-info-main w-auto"></i> Cấu hình tích điểm</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "Tier")"><i
+                                    class="ri-circle-fill circle-icon text-warning-main w-auto"></i> Quản lý hạng</a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index", "Benefit")"><i
+                                    class="ri-circle-fill circle-icon text-success-main w-auto"></i> Quản lý quyền lợi</a>
+                        </li>
+                    </ul>
+                </li>
+            }
+
+            <li class="dropdown">
+                <a href="javascript:void(0)" title="Chương trình thân thiết">
+                    <i class="ri-shopping-cart-line menu-icon"></i>
+                    <span>POS - Bán hàng</span>
+                </a>
+                <ul class="sidebar-submenu">
+                    @if (User.HasPermission(PermissionConstants.VIEW_TABLE))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Table")"><i
+                                    class="ri-circle-fill circle-icon text-primary-600 w-auto"></i> Quản lý bàn ăn</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.VIEW_TABLE_MANAGEMENT))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "TableManagement")"><i
+                                    class="ri-circle-fill circle-icon text-primary-600 w-auto"></i> Dashboard quản lý
+                                bàn</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.CREATE_ORDER))
+                    {
+                        <li>
+                            <a href="@Url.Action("Create", "Order")"><i
+                                    class="ri-circle-fill circle-icon text-warning-main w-auto"></i> Tạo đơn hàng</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.VIEW_ORDER))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Order")"><i
+                                    class="ri-circle-fill circle-icon text-info-main w-auto"></i> Quản lý đơn hàng</a>
+                        </li>
+                    }
+
+                </ul>
+            </li>
+
+            @* <li class="dropdown">
+                <a href="javascript:void(0)" title="POS - Bán hàng">
+                    <i class="ri-calendar-line menu-icon"></i>
+                    <span>Đặt bàn & Giao hàng</span>
+                </a>
+                <ul class="sidebar-submenu">
+                    @if (User.HasPermission(PermissionConstants.VIEW_RESERVATION))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Reservation")"><i class="ri-circle-fill circle-icon text-primary-600 w-auto"></i> Đặt bàn</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.MANAGE_ONLINE_ORDER))
+                    {
+                        <li>
+                            <a href="#"><i class="ri-circle-fill circle-icon text-warning-main w-auto"></i> Đặt món online</a>
+                        </li>
+                    }
+                    @if (User.HasPermission(PermissionConstants.MANAGE_DELIVERY))
+                    {
+                        <li>
+                            <a href="#"><i class="ri-circle-fill circle-icon text-info-main w-auto"></i> Quản lý giao hàng</a>
+                        </li>
+                    }
+                </ul>
+            </li> *@
+
+            <li class="dropdown">
+                <a href="javascript:void(0)" title="Đặt bàn & Giao hàng">
+                    <i class="ri-truck-line menu-icon"></i>
+                    <span>Nhà cung cấp</span>
+                </a>
+                <ul class="sidebar-submenu">
+                    @if (User.HasPermission(PermissionConstants.VIEW_SUPPLIER))
+                    {
+                        <li>
+                            <a href="@Url.Action("Index", "Supplier")"><i
+                                    class="ri-circle-fill circle-icon text-primary-600 w-auto"></i> Quản lý thông tin</a>
+                        </li>
+                    }
+                 
+
+                </ul>
+            </li>
+
+            @if (User.HasAnyPermission(PermissionConstants.VIEW_REVENUE_REPORT, PermissionConstants.VIEW_FINANCE_REPORT,
+                        PermissionConstants.VIEW_ANALYTICS))
+            {
+                <li class="sidebar-menu-group-title">Báo cáo & Phân tích</li>
+
+                <li>
+                    <a href="@Url.Action("Revenue", "Report")">
+                        <i class="ri-line-chart-line menu-icon"></i>
+                        <span>Báo cáo kinh doanh</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Customer", "Report")">
+                        <i class="ri-user-star-line menu-icon"></i>
+                        <span>Báo cáo khách hàng</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Inventory", "Report")">
+                        <i class="ri-inbox-line menu-icon"></i>
+                        <span>Báo cáo kho</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Trends", "Report")">
+                        <i class="ri-bar-chart-box-line menu-icon"></i>
+                        <span>Phân tích</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+</aside>

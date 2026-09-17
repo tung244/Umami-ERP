@@ -1,0 +1,170 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    Layout = "~/Views/Shared/_LayoutKitchen.cshtml";
+    var items = ViewBag.Items as List<OrderItem> ?? new List<OrderItem>();
+}
+
+<div class="container mt-4">
+
+    <div class="row align-items-center mb-3">
+        <div class="col">
+            <h1 class="h4 mb-1">Bếp</h1>
+            <p class="text-muted mb-0">Theo dõi các món đang chờ bếp xử lý.</p>
+        </div>
+        <div class="col text-end">
+            <span class="badge bg-primary">Tổng món: <span id="ticketCount">@items.Count</span></span>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 mb-3" id="filterForm">
+                <div class="col-md-4">
+                    <label class="form-label">Khu vực bếp</label>
+                    <select class="form-select" name="sectionId" asp-items="ViewBag.SectionOptions"></select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Trạng thái món</label>
+                    <select class="form-select" name="status" asp-items="ViewBag.StatusOptions"></select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary">Lọc</button>
+                    <a class="btn btn-outline-secondary" href="@Url.Action("Index", "KitchenTicket")">Xóa lọc</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="ticketList"></div>
+</div>
+
+
+@section Scripts {
+    <script>
+        const routes = {
+            getTickets: '@Url.Action("GetTickets", "KitchenTicket")',
+            updateStatus: '@Url.Action("UpdateItemStatus", "KitchenTicket")'
+        };
+
+        // Lấy filter từ URL query params
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSectionId = urlParams.get('sectionId') || '';
+        const currentStatus = urlParams.get('status') || '';
+
+        function formatStatus(status) {
+            switch (status) {
+                case 'Pending': return { text: 'Chờ xử lý', badge: 'bg-warning' };
+                case 'SentToKitchen': return { text: 'Đã gửi bếp', badge: 'bg-info' };
+                case 'Preparing': return { text: 'Đang nấu', badge: 'bg-primary' };
+                case 'Ready': return { text: 'Hoàn tất', badge: 'bg-success' };
+                case 'Served': return { text: 'Đã phục vụ', badge: 'bg-secondary' };
+                default: return { text: status, badge: 'bg-light text-dark' };
+            }
+        }
+
+        function renderTickets(tickets) {
+            console.log('🎨 Rendering', tickets.length, 'tickets');
+            const container = document.getElementById('ticketList');
+            const counter = document.getElementById('ticketCount');
+
+            if (!tickets.length) {
+                container.innerHTML = '<div class="alert alert-info text-center">Không có món nào.</div>';
+                counter.textContent = '0';
+                console.log('⚠️ No tickets to display');
+                return;
+            }
+
+            let html = '<div class="ticket-grid">';
+
+            tickets.forEach(t => {
+                const status = formatStatus(t.status);
+                const placedTime = new Date(t.placedAt).toLocaleTimeString('vi-VN', { hour: "2-digit", minute: "2-digit" });
+
+                html += `
+                <div class="ticket-card" data-item-id="${t.orderItemId}">
+                    <div class="ticket-header ${t.tableName ? 'eat-in' : 'delivery'}">
+                        <div>
+                            <div class="ticket-title">${t.tableName || 'Mang về / Giao hàng'}</div>
+                            <div class="ticket-sub">Order: ${t.orderNumber}</div>
+                        </div>
+                        <button class="btn btn-light btn-sm" data-action="Served">TRẢ HẾT</button>
+                    </div>
+
+                    <div class="ticket-body">
+                        <div class="ticket-dish">${t.dishName}</div>
+                        <span class="badge ${status.badge} mb-2">${status.text}</span>
+                        <div class="ticket-info">SL: ${t.quantity}</div>
+                        <div class="ticket-info">KH: ${t.customerName || 'Vãng lai'}</div>
+                        <div class="ticket-info">${t.notes || ''}</div>
+                    </div>
+
+                    <div class="ticket-footer">
+                        <div class="ticket-actions">
+                            <button class="btn btn-warning btn-sm" data-action="Preparing">Bắt đầu</button>
+                            <button class="btn btn-success btn-sm" data-action="Ready">Hoàn tất</button>
+                            <button class="btn btn-secondary btn-sm" data-action="Served">Đã phục vụ</button>
+                        </div>
+                        <small class="text-muted">${placedTime}</small>
+                    </div>
+                </div>`;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+            counter.textContent = tickets.length;
+        }
+
+        function loadTickets() {
+            // Truyền filter từ URL
+            let url = routes.getTickets;
+            const params = new URLSearchParams();
+            if (currentSectionId) params.append('sectionId', currentSectionId);
+            if (currentStatus) params.append('status', currentStatus);
+            if (params.toString()) url += '?' + params.toString();
+
+            console.log('🔍 Fetching tickets from:', url);
+            fetch(url)
+                .then(r => r.json())
+                .then(d => {
+                    console.log('✅ Tickets received:', d.tickets?.length || 0, 'items', d);
+                    if (d.success) {
+                        renderTickets(d.tickets);
+                    } else {
+                        console.error('❌ GetTickets failed:', d.message);
+                    }
+                })
+                .catch(e => console.error('❌ Load tickets error:', e));
+        }
+
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+
+            const card = btn.closest('.ticket-card');
+            const id = card.getAttribute('data-item-id');
+            const action = btn.getAttribute('data-action');
+
+            const form = new URLSearchParams();
+            form.append("orderItemId", id);
+            form.append("status", action);
+
+            fetch(routes.updateStatus, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: form
+            }).then(r => r.json())
+              .then(d => { if (d.success) loadTickets(); });
+        });
+
+        if (window.signalR) {
+            const connection = new signalR.HubConnectionBuilder().withUrl('/dishHub').build();
+            connection.on('KitchenTicketAdded', loadTickets);
+            connection.on('KitchenTicketUpdated', loadTickets);
+            connection.on('ReceiveDishPreparationUpdate', loadTickets);
+            connection.start();
+        }
+
+        loadTickets();
+    </script>
+}

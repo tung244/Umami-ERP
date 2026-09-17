@@ -1,0 +1,225 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var items = ViewBag.Items as List<InventoryItem>;
+    int page = (int)ViewBag.CurrentPage;
+    int total = (int)ViewBag.TotalPages;
+    string search = (string)ViewBag.SearchTerm;
+    string statusFilter = (string)(ViewBag.StatusFilter ?? "");
+    var lowStockItems = ViewBag.LowStockItems as List<InventoryItem>;
+    var outOfStockItems = ViewBag.OutOfStockItems as List<InventoryItem>;
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">@ViewBag.Title</h4>
+                <div class="card-tools">
+                    <a href="@Url.Action("Create")" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Tạo vật phẩm mới
+                    </a>
+                    <a href="@Url.Action("Import")" class="btn btn-info btn-sm ml-2">
+                        <i class="fas fa-file-excel"></i> Nhập từ Excel
+                    </a>
+                    <a href="@Url.Action("DownloadImportTemplate")" class="btn btn-secondary btn-sm ml-2">
+                        <i class="fas fa-download"></i> Tải mẫu
+                    </a>
+                </div>
+            </div>
+
+            @if (lowStockItems != null && lowStockItems.Any())
+            {
+                <div class="alert alert-warning alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <h5><i class="icon fas fa-exclamation-triangle"></i> Cảnh báo tồn kho thấp!</h5>
+                    <ul class="mb-0">
+                        @foreach (var item in lowStockItems)
+                        {
+                            @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                            <li>@item.Name - Còn @string.Format("{0:#,##0.##}", item.CurrentQuantity) @item.Unit</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            @if (outOfStockItems != null && outOfStockItems.Any())
+            {
+                <div class="alert alert-danger alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <h5><i class="icon fas fa-times-circle"></i> Hết hàng!</h5>
+                    <ul class="mb-0">
+                        @foreach (var item in outOfStockItems)
+                        {
+                            <li>@item.Name</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <div class="card-body">
+                <form method="get" class="mb-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <input type="text" name="search" value="@search" class="form-control" placeholder="Tìm kiếm vật phẩm..." />
+                        </div>
+                        <div class="col-md-3">
+                            <select name="status" class="form-control">
+                                @{
+                                    var statuses = new[] { ("", "-- Tất cả trạng thái --"), ("active", "Hoạt động"), ("inactive", "Ngừng hoạt động"), ("low", "Tồn kho thấp"), ("outofstock", "Hết hàng") };
+                                }
+                                @foreach (var (value, label) in statuses)
+                                {
+                                    if (statusFilter == value)
+                                    {
+                                        <option value="@value" selected>@label</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@value">@label</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-secondary btn-block">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-block">
+                                <i class="fas fa-times"></i> Xóa bộ lọc
+                            </a>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>Mã SKU</th>
+                                <th>Tên vật phẩm</th>
+                                <th>Vị trí lưu trữ</th>
+                                <th>Số lượng hiện tại</th>
+                                <th>Đơn vị</th>
+                                <th>Giá nhập</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (items != null && items.Any())
+                            {
+                                @foreach (InventoryItem item in items)
+                                {
+                                    <tr>
+                                        <td>@(string.IsNullOrEmpty(item.Sku) ? "-" : item.Sku)</td>
+                                        <td>
+                                            <strong>@item.Name</strong>
+                                        </td>
+                                        <td>@(item.StorageLocation?.Name ?? "-")</td>
+                                        <td style="font-weight: bold; font-size: 1.05em;">
+                                            @if (item.CurrentQuantity <= 0)
+                                            {
+                                                <span class="badge bg-danger text-white">Hết hàng</span>
+                                            }
+                                            else if (item.CurrentQuantity <= item.ReorderLevel)
+                                            {
+                                                @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                                                <span class="badge bg-warning text-white">@string.Format("{0:#,##0.##}", item.CurrentQuantity) @item.Unit</span>
+                                            }
+                                            else
+                                            {
+                                                @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                                                <span class="badge bg-success text-white">@string.Format("{0:#,##0.##}", item.CurrentQuantity) @item.Unit</span>
+                                            }
+                                        </td>
+                                        <td>@item.Unit</td>
+                                        
+                                        @* ĐÃ SỬA ĐỊNH DẠNG SỐ (CostPerUnit) *@
+                                        <td style="font-weight: bold; font-size: 1.1em; color: #0066cc;">@string.Format("{0:#,##0.##}", item.CostPerUnit) VND</td>
+                                        
+                                        <td>
+                                            @if (item.IsActive)
+                                            {
+                                                <span class="badge bg-success text-white">Hoạt động</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary text-white">Ngừng hoạt động</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <a href="#" class="dropdown-toggle card-drop" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </a>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a href="@Url.Action("Details", new { id = item.ItemId })" class="dropdown-item">
+                                                        <i class="fas fa-eye me-2"></i>Xem chi tiết</a></li>
+                                                    <li><a href="@Url.Action("Edit", new { id = item.ItemId })" class="dropdown-item">
+                                                        <i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
+                                                    <li><a href="@Url.Action("ConfigureAlert", "StockAlert", new { itemId = item.ItemId })" class="dropdown-item">
+                                                        <i class="fas fa-bell me-2"></i>Cấu hình cảnh báo</a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form method="post" action="@Url.Action("Delete", new { id = item.ItemId })" style="display: inline;">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa vật phẩm này?')">
+                                                                <i class="fas fa-trash me-2"></i>Xóa
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                                        <br />
+                                        Không có dữ liệu
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (total > 1)
+                {
+                    <div class="d-flex justify-content-center">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                @if (page > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = page - 1, search, status = statusFilter })">Trước</a>
+                                    </li>
+                                }
+
+                                @for (int i = Math.Max(1, page - 2); i <= Math.Min(total, page + 2); i++)
+                                {
+                                    <li class="page-item @(i == page ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i, search, status = statusFilter })">@i</a>
+                                    </li>
+                                }
+
+                                @if (page < total)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = page + 1, search, status = statusFilter })">Sau</a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,342 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    ViewData["title"] = "Phân tích";
+    ViewData["subTitle"] = "Xu hướng, Peak Hours và Operational Metrics";
+    var branches = ViewBag.Branches as List<Branch> ?? new List<Branch>();
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card radius-8 border mb-24">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <h5 class="mb-0 fw-bold">Phân tích</h5>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <select id="branchFilter" class="form-select form-select-sm w-auto">
+                        <option value="">Tất cả chi nhánh</option>
+                        @foreach (var branch in branches)
+                        {
+                            <option value="@branch.BranchId">@branch.Name</option>
+                        }
+                    </select>
+                    <input type="date" id="startDate" class="form-control form-control-sm w-auto" value="@DateTime.Today.AddMonths(-1).ToString("yyyy-MM-dd")">
+                    <span class="text-secondary-light">đến</span>
+                    <input type="date" id="endDate" class="form-control form-control-sm w-auto" value="@DateTime.Today.ToString("yyyy-MM-dd")">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="refreshReports()">
+                        <iconify-icon icon="mdi:refresh"></iconify-icon> Làm mới
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Peak Hours & Operational Metrics -->
+<div class="row mb-24">
+    <div class="col-xxl-8">
+        <div class="card radius-8 border h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-semibold">Phân tích giờ cao điểm</h6>
+            </div>
+            <div class="card-body">
+                <div id="peakHoursHeatmap" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xxl-4">
+        <div class="card radius-8 border h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-semibold">Chỉ số vận hành</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-sm fw-semibold">Thời gian phục vụ</h6>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-secondary-light">Thời gian trung bình:</span>
+                        <span class="fw-bold" id="avgFulfillmentTime">0 phút</span>
+                    </div>
+                </div>
+                <hr>
+                <div>
+                    <h6 class="text-sm fw-semibold mb-3">Bàn có lượt đặt nhiều nhất</h6>
+                    <div id="tableTurnoverList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly & Monthly Trends -->
+<div class="row mb-24">
+    <div class="col-xxl-6">
+        <div class="card radius-8 border h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-semibold">Weekly Pattern</h6>
+                <p class="text-sm text-secondary-light mb-0">Doanh thu trung bình theo ngày trong tuần</p>
+            </div>
+            <div class="card-body">
+                <div id="weeklyPatternChart" style="min-height: 380px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xxl-6">
+        <div class="card radius-8 border h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-semibold">Monthly Trend</h6>
+                <p class="text-sm text-secondary-light mb-0">Xu hướng doanh thu theo tháng</p>
+            </div>
+            <div class="card-body">
+                <div id="monthlyTrendChart" style="min-height: 380px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let charts = {};
+        let reportConnection = null;
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(amount);
+        }
+
+        function getFilters() {
+            return {
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                branchId: document.getElementById('branchFilter').value
+            };
+        }
+
+        async function loadPeakHours() {
+            const filters = getFilters();
+            const response = await fetch(`/Report/PeakHoursAnalysis?startDate=${filters.startDate}&endDate=${filters.endDate}&branchId=${filters.branchId}`);
+            const result = await response.json();
+            if (!result.success) return;
+
+            console.log('Peak Hours Data:', result); // Debug log
+
+            // Thứ tự ngày: Thứ 2 (1) -> Chủ nhật (0)
+            const dayOrder = [1, 2, 3, 4, 5, 6, 0]; // Monday to Sunday
+            const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
+
+            const series = [];
+            dayOrder.forEach((dayOfWeek, index) => {
+                const dayData = result.heatmap.filter(h => h.dayOfWeek === dayOfWeek).sort((a, b) => a.hour - b.hour);
+                series.push({
+                    name: dayNames[index],
+                    data: Array.from({length: 24}, (_, hour) => {
+                        const found = dayData.find(d => d.hour === hour);
+                        return found ? found.orderCount : 0;
+                    })
+                });
+            });
+
+            const options = {
+                series: series,
+                chart: { height: 400, type: 'heatmap', toolbar: { show: false } },
+                dataLabels: { enabled: false },
+                colors: ['#0ea5e9'],
+                xaxis: {
+                    categories: Array.from({length: 24}, (_, i) => i + 'h'),
+                    title: { text: 'Giờ trong ngày' }
+                },
+                yaxis: {
+                    title: { text: 'Ngày trong tuần' },
+                    labels: {
+                        style: {
+                            cssClass: 'apexcharts-yaxis-label'
+                        },
+                        minWidth: 80
+                    }
+                },
+                tooltip: {
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        const value = series[seriesIndex][dataPointIndex];
+                        const dayName = dayNames[seriesIndex];
+                        const hour = dataPointIndex;
+                        return '<div class="apexcharts-tooltip-custom" style="padding: 8px;">' +
+                               '<div><strong>' + dayName + ', ' + hour + ':00</strong></div>' +
+                               '<div>Số đơn: <strong>' + value + '</strong></div>' +
+                               '</div>';
+                    }
+                },
+                plotOptions: {
+                    heatmap: {
+                        colorScale: {
+                            ranges: [{
+                                from: 0, to: 0, color: '#f3f4f6', name: 'Không có đơn'
+                            }, {
+                                from: 1, to: 5, color: '#fef08a', name: 'Rất thấp'
+                            }, {
+                                from: 6, to: 15, color: '#fbbf24', name: 'Thấp'
+                            }, {
+                                from: 16, to: 30, color: '#f97316', name: 'Trung bình'
+                            }, {
+                                from: 31, to: 999, color: '#dc2626', name: 'Cao'
+                            }]
+                        }
+                    }
+                }
+            };
+
+            if (charts.peakHours) charts.peakHours.destroy();
+            charts.peakHours = new ApexCharts(document.querySelector("#peakHoursHeatmap"), options);
+            charts.peakHours.render();
+        }
+
+        async function loadOperationalMetrics() {
+            const filters = getFilters();
+            const response = await fetch(`/Report/OperationalMetrics?startDate=${filters.startDate}&endDate=${filters.endDate}&branchId=${filters.branchId}`);
+            const result = await response.json();
+            if (!result.success) return;
+
+            document.getElementById('avgFulfillmentTime').textContent = result.thoiGianPhucVu.phutTrungBinh.toFixed(1) + ' phút';
+
+            let html = '<ul class="list-unstyled mb-0">';
+            result.luotQuayBan.slice(0, 5).forEach((table, idx) => {
+                html += `<li class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-sm"><span class="fw-bold">#${idx + 1}</span> ${table.tenBan}</span>
+                    <span class="badge bg-primary-600">${table.soLuotDat} đơn</span>
+                </li>`;
+            });
+            html += '</ul>';
+            document.getElementById('tableTurnoverList').innerHTML = html;
+        }
+
+        async function loadSeasonality() {
+            const filters = getFilters();
+            const response = await fetch(`/Report/SeasonalityAnalysis?startDate=${filters.startDate}&endDate=${filters.endDate}`);
+            const result = await response.json();
+            if (!result.success) return;
+
+            // Weekly Pattern
+            const weeklyOptions = {
+                series: [{
+                    name: 'Doanh thu TB',
+                    data: result.weeklyPattern.map(w => w.avgRevenue)
+                }],
+                chart: { type: 'bar', height: 380 },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 4,
+                        dataLabels: { position: 'top' }
+                    }
+                },
+                colors: ['#8b5cf6'],
+                dataLabels: {
+                    enabled: true,
+                    formatter: val => (val / 1000).toFixed(0) + 'k',
+                    offsetY: -20,
+                    style: {
+                        fontSize: '12px',
+                        colors: ["#304758"]
+                    }
+                },
+                xaxis: {
+                    categories: result.weeklyPattern.map(w => w.dayOfWeek),
+                    position: 'bottom'
+                },
+                yaxis: {
+                    labels: {
+                        formatter: val => (val / 1000).toFixed(0) + 'k'
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: formatCurrency
+                    }
+                }
+            };
+
+            if (charts.weeklyPattern) charts.weeklyPattern.destroy();
+            charts.weeklyPattern = new ApexCharts(document.querySelector("#weeklyPatternChart"), weeklyOptions);
+            charts.weeklyPattern.render();
+
+            // Monthly Trend
+            const monthlyOptions = {
+                series: [{
+                    name: 'Doanh thu',
+                    data: result.monthlyTrend.map(m => m.revenue)
+                }],
+                chart: { type: 'line', height: 380 },
+                stroke: {
+                    curve: 'smooth',
+                    width: 3
+                },
+                colors: ['#0ea5e9'],
+                xaxis: {
+                    categories: result.monthlyTrend.map(m => m.period)
+                },
+                yaxis: {
+                    labels: {
+                        formatter: val => (val / 1000).toFixed(0) + 'k'
+                    }
+                },
+                markers: {
+                    size: 5,
+                    colors: ['#0ea5e9'],
+                    strokeColors: '#fff',
+                    strokeWidth: 2,
+                    hover: {
+                        size: 7
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: formatCurrency
+                    }
+                }
+            };
+
+            if (charts.monthlyTrend) charts.monthlyTrend.destroy();
+            charts.monthlyTrend = new ApexCharts(document.querySelector("#monthlyTrendChart"), monthlyOptions);
+            charts.monthlyTrend.render();
+        }
+
+        function refreshReports() {
+            loadPeakHours();
+            loadOperationalMetrics();
+            loadSeasonality();
+        }
+
+        // SignalR connection setup
+        async function initializeSignalR() {
+            reportConnection = new signalR.HubConnectionBuilder()
+                .withUrl("/reportHub")
+                .withAutomaticReconnect()
+                .build();
+
+            // Lắng nghe sự kiện cập nhật trends
+            reportConnection.on("TrendsUpdated", (data) => {
+                console.log("Trends updated:", data);
+                refreshReports();
+            });
+
+            // Lắng nghe sự kiện cập nhật tất cả báo cáo
+            reportConnection.on("AllReportsUpdated", (data) => {
+                console.log("All reports updated:", data);
+                refreshReports();
+            });
+
+            try {
+                await reportConnection.start();
+                console.log("SignalR connected to ReportHub");
+            } catch (err) {
+                console.error("SignalR connection error:", err);
+                setTimeout(initializeSignalR, 5000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshReports();
+            initializeSignalR();
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (reportConnection) {
+                reportConnection.stop();
+            }
+        });
+    </script>
+}

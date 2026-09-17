@@ -1,0 +1,379 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var orders = ViewBag.Orders as List<Order>;
+    int currentPage = (int)ViewBag.CurrentPage;
+    int totalPages = (int)ViewBag.TotalPages;
+    string searchTerm = ViewBag.SearchTerm as string ?? "";
+    string statusFilter = ViewBag.StatusFilter as string ?? "";
+    string sortOrder = ViewBag.SortOrder as string ?? "newest";
+}
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Dashboard")">Trang chủ</a></li>
+                        <li class="breadcrumb-item active">Quản lý đơn hàng</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Danh sách đơn hàng</h3>
+                            <div class="card-tools">
+                                <a href="@Url.Action("Create")" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus"></i> Tạo đơn hàng mới
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <!-- Bộ lọc và tìm kiếm -->
+                            <form method="get" class="mb-3">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <input type="text" name="search" value="@searchTerm"
+                                               class="form-control" placeholder="Tìm theo mã đơn hàng hoặc tên khách hàng">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select name="status" class="form-control">
+                                            <option value="">Tất cả trạng thái</option>
+                                            @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                                            {
+                                                <option value="@status" selected="@(status.ToString() == statusFilter)">
+                                                    @GetStatusDisplayName(status)
+                                                </option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select name="sort" class="form-control">
+                                            <option value="newest" selected="@(sortOrder == "newest")">Mới nhất</option>
+                                            <option value="oldest" selected="@(sortOrder == "oldest")">Cũ nhất</option>
+                                            <option value="total_desc" selected="@(sortOrder == "total_desc")">Tổng tiền cao</option>
+                                            <option value="total_asc" selected="@(sortOrder == "total_asc")">Tổng tiền thấp</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-secondary">
+                                            <i class="fas fa-search"></i> Tìm kiếm
+                                        </button>
+                                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times"></i> Xóa bộ lọc
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <!-- Bảng danh sách đơn hàng -->
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã đơn hàng</th>
+                                            <th>Bàn</th>
+                                            <th>Khách hàng</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Trạng thái</th>
+                                            <th>Thời gian tạo</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="orders-tbody">
+                                        @if (orders != null && orders.Any())
+                                        {
+                                            foreach (var order in orders)
+                                            {
+                                                <tr id="order-row-@order.OrderId">
+                                                    <td>
+                                                        <a href="@Url.Action("Details", new { id = order.OrderId })">
+                                                            @order.OrderNumber
+                                                        </a>
+                                                    </td>
+                                                    <td>@(order.Table?.Name ?? "Mang về")</td>
+                                                    <td>@(order.Customer?.FullName ?? "Khách vãng lai")</td>
+                                                    <td class="text-right">@order.TotalAmount.ToString("N0") VND</td>
+                                                    <td>
+                                                        <span class="badge @(GetStatusBadgeClass(order.Status))">
+                                                            @GetStatusDisplayName(order.Status)
+                                                        </span>
+                                                    </td>
+                                                    <td>@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                    <td>
+                                                        <a href="@Url.Action("Details", new { id = order.OrderId })"
+                                                           class="btn btn-info btn-sm">
+                                                            <i class="fas fa-eye"></i> Chi tiết
+                                                        </a>
+                                                        @if (order.Status == OrderStatus.Open || order.Status == OrderStatus.Confirmed)
+                                                        {
+                                                            <a href="@Url.Action("AddItem", new { orderId = order.OrderId })"
+                                                               class="btn btn-success btn-sm">
+                                                                <i class="fas fa-plus"></i> Thêm món
+                                                            </a>
+                                                        }
+                                                        @if (order.Status == OrderStatus.Ready || order.Status == OrderStatus.Served)
+                                                        {
+                                                            <button type="button" class="btn btn-warning btn-sm"
+                                                                    onclick="checkoutOrder('@order.OrderId')">
+                                                                <i class="fas fa-credit-card"></i> Thanh toán
+                                                            </button>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="7" class="text-center">Không có đơn hàng nào</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Phân trang -->
+                            @if (totalPages > 1)
+                            {
+                                <nav aria-label="Page navigation">
+                                    <ul class="pagination justify-content-center">
+                                        @if (currentPage > 1)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("Index", new { page = currentPage - 1, search = searchTerm, status = statusFilter, sort = sortOrder })">
+                                                    Trước
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                                        {
+                                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                                <a class="page-link" href="@Url.Action("Index", new { page = i, search = searchTerm, status = statusFilter, sort = sortOrder })">
+                                                    @i
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (currentPage < totalPages)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("Index", new { page = currentPage + 1, search = searchTerm, status = statusFilter, sort = sortOrder })">
+                                                    Sau
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </nav>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Modal thanh toán -->
+<div class="modal fade" id="checkoutModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thanh toán đơn hàng</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="checkoutForm" method="post">
+                <div class="modal-body">
+                    <input type="hidden" id="checkoutOrderId" name="orderId" />
+                    <div class="form-group">
+                        <label>Tổng tiền cần thanh toán:</label>
+                        <h4 id="checkoutTotal" class="text-primary"></h4>
+                    </div>
+                    <div class="form-group">
+                        <label for="paidAmount">Số tiền khách trả:</label>
+                        <input type="number" class="form-control" id="paidAmount" name="paidAmount"
+                               step="1000" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentMethod">Phương thức thanh toán:</label>
+                        <select class="form-control" id="paymentMethod" name="paymentMethod" required>
+                            <option value="Cash">Tiền mặt</option>
+                            <option value="Card">Thẻ tín dụng</option>
+                            <option value="Transfer">Chuyển khoản</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tiền thừa:</label>
+                        <h5 id="changeAmount" class="text-success">0 VND</h5>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Xác nhận thanh toán</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/lib/dist/browser/signalr.min.js"></script>
+<script>
+function checkoutOrder(orderId) {
+    // Lấy thông tin đơn hàng và hiển thị modal
+    var checkoutModal = document.getElementById('checkoutModal');
+    document.getElementById('checkoutOrderId').value = orderId;
+    document.getElementById('checkoutTotal').textContent = '500,000 VND'; // Tạm thời
+    if (typeof $ !== 'undefined' && $.fn.modal) {
+        $(checkoutModal).modal('show');
+    } else {
+        checkoutModal.style.display = 'block';
+    }
+}
+
+var paidAmountInput = document.getElementById('paidAmount');
+if (paidAmountInput) {
+    paidAmountInput.addEventListener('input', function() {
+        var paid = parseFloat(this.value) || 0;
+        var total = 500000; // Tạm thời, sau này lấy từ server
+        var change = paid - total;
+        var changeAmountEl = document.getElementById('changeAmount');
+        changeAmountEl.textContent = change >= 0 ? change.toLocaleString() + ' VND' : 'Không đủ tiền';
+        changeAmountEl.classList.remove('text-success', 'text-danger');
+        changeAmountEl.classList.add(change >= 0 ? 'text-success' : 'text-danger');
+    });
+}
+
+// SignalR real-time updates
+(function() {
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl('/dishHub')
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    function upsertOrderRow(orderId) {
+        console.log('[Order Index] Upsert order:', orderId);
+        
+        fetch('@Url.Action("Row", "Order")?id=' + orderId)
+            .then(response => {
+                if (!response.ok) {
+                    console.error('[Order Index] Failed to fetch row:', response.status);
+                    return null;
+                }
+                return response.text();
+            })
+            .then(html => {
+                if (!html) return;
+                
+                const tbody = document.getElementById('orders-tbody');
+                const existing = document.getElementById('order-row-' + orderId);
+                
+                if (existing) {
+                    // Thay thế hàng hiện tại
+                    const temp = document.createElement('tbody');
+                    temp.innerHTML = html;
+                    const newRow = temp.firstElementChild;
+                    if (newRow) {
+                        existing.replaceWith(newRow);
+                        console.log('[Order Index] Replaced existing row for:', orderId);
+                    }
+                } else {
+                    // Chèn hàng mới lên đầu
+                    const temp = document.createElement('tbody');
+                    temp.innerHTML = html;
+                    const newRow = temp.firstElementChild;
+                    if (newRow && tbody) {
+                        tbody.insertBefore(newRow, tbody.firstChild);
+                        console.log('[Order Index] Inserted new row for:', orderId);
+                    }
+                }
+            })
+            .catch(err => console.error('[Order Index] Error upserting row:', err));
+    }
+
+    connection.on('KitchenTicketAdded', function(data) {
+        console.log('[Order Index] 🔔 Đơn mới:', data);
+        if (data && data.orderId) {
+            upsertOrderRow(data.orderId);
+        }
+    });
+
+    connection.on('KitchenTicketUpdated', function(data) {
+        console.log('[Order Index] 🔄 Đơn cập nhật:', data);
+        if (data && data.orderId) {
+            upsertOrderRow(data.orderId);
+        }
+    });
+
+    connection.start()
+        .then(() => console.log('[Order Index] SignalR connected'))
+        .catch(err => console.error('[Order Index] SignalR error:', err));
+})();
+</script>
+
+@{
+    string GetStatusBadgeClass(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Open => "badge bg-warning text-dark",
+            OrderStatus.Confirmed => "badge bg-info text-white",
+            OrderStatus.InPreparation => "badge bg-primary text-white",
+            OrderStatus.Ready => "badge bg-success text-white",
+            OrderStatus.Served => "badge bg-secondary text-white",
+            OrderStatus.Paid => "badge bg-dark text-white",
+            OrderStatus.Cancelled => "badge bg-danger text-white",
+            OrderStatus.Refunded => "badge bg-warning text-dark",
+            _ => "badge bg-light text-dark"
+        };
+    }
+
+    string GetStatusDisplayName(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Open => "Mới tạo",
+            OrderStatus.Confirmed => "Đã xác nhận",
+            OrderStatus.InPreparation => "Đang chuẩn bị",
+            OrderStatus.Ready => "Sẵn sàng",
+            OrderStatus.Served => "Đã phục vụ",
+            OrderStatus.Paid => "Đã thanh toán",
+            OrderStatus.Cancelled => "Đã hủy",
+            OrderStatus.Refunded => "Đã hoàn tiền",
+            _ => status.ToString()
+        };
+    }
+}
+
+<style>
+    .badge {
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 4px;
+        display: inline-block;
+    }
+    
+    .bg-warning { background-color: #ffc107 !important; }
+    .bg-info { background-color: #17a2b8 !important; }
+    .bg-primary { background-color: #007bff !important; }
+    .bg-success { background-color: #28a745 !important; }
+    .bg-secondary { background-color: #6c757d !important; }
+    .bg-dark { background-color: #343a40 !important; }
+    .bg-light { background-color: #f8f9fa !important; }
+    
+    .text-white { color: #ffffff !important; }
+    .text-dark { color: #212529 !important; }
+</style>

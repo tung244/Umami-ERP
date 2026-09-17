@@ -1,0 +1,247 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var reservation = ViewBag.Reservation as Reservation;
+}
+
+@if (reservation == null)
+{
+    <div class="alert alert-danger">
+        <h4><i class="icon fas fa-ban"></i> Lỗi!</h4>
+        Không tìm thấy đặt bàn.
+    </div>
+}
+else
+{
+    <div class="content-wrapper">
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>@ViewBag.Title</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="~/Dashboard">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a href="~/Reservation">Quản lý đặt bàn</a></li>
+                        <li class="breadcrumb-item active">@ViewBag.Title</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Thông tin đặt bàn</h3>
+                            <div class="card-tools">
+                                @if (reservation.Status == ReservationStatus.Pending)
+                                {
+                                    <a href="~/Reservation/Edit/@reservation.ReservationId" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i> Sửa
+                                    </a>
+                                    <form method="post" action="~/Reservation/Confirm/@reservation.ReservationId" class="d-inline ml-1" onsubmit="return confirm('Xác nhận đặt bàn này?')">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="fas fa-check"></i> Xác nhận
+                                        </button>
+                                    </form>
+                                }
+                                @if (reservation.Status == ReservationStatus.Pending || reservation.Status == ReservationStatus.Confirmed)
+                                {
+                                    <button type="button" class="btn btn-danger btn-sm ml-1" onclick="cancelReservation('@reservation.ReservationId')">
+                                        <i class="fas fa-times"></i> Hủy đặt bàn
+                                    </button>
+                                }
+                                <a href="~/Reservation" class="btn btn-secondary btn-sm ml-1">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Mã đặt bàn:</dt>
+                                        <dd class="col-sm-8">@reservation.ReservationId.ToString().Substring(0, 8)</dd>
+
+                                        <dt class="col-sm-4">Chi nhánh:</dt>
+                                        <dd class="col-sm-8">@reservation.Branch?.Name</dd>
+
+                                        <dt class="col-sm-4">Khách hàng:</dt>
+                                        <dd class="col-sm-8">
+                                            @if (reservation.Customer != null)
+                                            {
+                                                <strong>@(reservation.Customer.FirstName + " " + reservation.Customer.LastName)</strong><br />
+                                                <small class="text-muted">@reservation.Customer.PhoneNumber</small>
+                                            }
+                                            else
+                                            {
+                                                <em>Khách vãng lai</em>
+                                            }
+                                        </dd>
+
+                                        <dt class="col-sm-4">Số người:</dt>
+                                        <dd class="col-sm-8">@reservation.PartySize người</dd>
+
+                                        <dt class="col-sm-4">Nguồn:</dt>
+                                        <dd class="col-sm-8">
+                                            @switch (reservation.Source)
+                                            {
+                                                case ReservationSource.Phone:
+                                                    <span>Điện thoại</span>
+                                                    break;
+                                                case ReservationSource.WalkIn:
+                                                    <span>Đến trực tiếp</span>
+                                                    break;
+                                                case ReservationSource.Web:
+                                                    <span>Website</span>
+                                                    break;
+                                                case ReservationSource.App:
+                                                    <span>Ứng dụng</span>
+                                                    break;
+                                                default:
+                                                    <span>@reservation.Source</span>
+                                                    break;
+                                            }
+                                        </dd>
+                                    </dl>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Thời gian bắt đầu:</dt>
+                                        <dd class="col-sm-8">@reservation.ReserveStartAt.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                                        <dt class="col-sm-4">Thời gian kết thúc:</dt>
+                                        <dd class="col-sm-8">@reservation.ReserveEndAt.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                                        <dt class="col-sm-4">Bàn được đặt:</dt>
+                                        <dd class="col-sm-8">
+                                            @if (reservation.ReservedTable != null)
+                                            {
+                                                <text>@reservation.ReservedTable.Name (@reservation.ReservedTable.Code)</text><br />
+                                                <small class="text-muted">@reservation.ReservedTable.Seats chỗ ngồi</small>
+                                            }
+                                            else
+                                            {
+                                                <em>Chưa chọn bàn</em>
+                                            }
+                                        </dd>
+
+                                        <dt class="col-sm-4">Trạng thái:</dt>
+                                        <dd class="col-sm-8">
+                                            @switch (reservation.Status)
+                                            {
+                                                case ReservationStatus.Pending:
+                                                    <span class="badge badge-warning">Chờ xử lý</span>
+                                                    break;
+                                                case ReservationStatus.Confirmed:
+                                                    <span class="badge badge-success">Đã xác nhận</span>
+                                                    break;
+                                                case ReservationStatus.Completed:
+                                                    <span class="badge badge-info">Đã hoàn thành</span>
+                                                    break;
+                                                case ReservationStatus.Cancelled:
+                                                    <span class="badge badge-danger">Đã hủy</span>
+                                                    break;
+                                                case ReservationStatus.NoShow:
+                                                    <span class="badge badge-secondary">Không đến</span>
+                                                    break;
+                                            }
+                                        </dd>
+
+                                        <dt class="col-sm-4">Ngày tạo:</dt>
+                                        <dd class="col-sm-8">@reservation.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                                    </dl>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(reservation.Notes))
+                            {
+                                <div class="row">
+                                    <div class="col-12">
+                                        <dt>Ghi chú:</dt>
+                                        <dd>@reservation.Notes</dd>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Thao tác nhanh</h3>
+                        </div>
+                        <div class="card-body">
+                            @if (reservation.Status == ReservationStatus.Pending)
+                            {
+                                <p><strong>Đặt bàn này đang chờ xác nhận.</strong></p>
+                                <form method="post" action="~/Reservation/Confirm/@reservation.ReservationId" class="mb-2" onsubmit="return confirm('Xác nhận đặt bàn này?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-success btn-block">
+                                        <i class="fas fa-check"></i> Xác nhận đặt bàn
+                                    </button>
+                                </form>
+                            }
+                            else if (reservation.Status == ReservationStatus.Confirmed)
+                            {
+                                <p><strong>Đặt bàn đã được xác nhận.</strong></p>
+                                <p class="text-muted">Khách hàng sẽ đến vào @reservation.ReserveStartAt.ToString("dd/MM/yyyy HH:mm")</p>
+                            }
+                            else if (reservation.Status == ReservationStatus.Completed)
+                            {
+                                <p><strong>Đặt bàn đã hoàn thành.</strong></p>
+                            }
+                            else if (reservation.Status == ReservationStatus.Cancelled)
+                            {
+                                <p><strong>Đặt bàn đã bị hủy.</strong></p>
+                            }
+
+                            @if (reservation.Status == ReservationStatus.Pending || reservation.Status == ReservationStatus.Confirmed)
+                            {
+                                <button type="button" class="btn btn-danger btn-block" onclick="cancelReservation('@reservation.ReservationId')">
+                                    <i class="fas fa-times"></i> Hủy đặt bàn
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </div>
+}
+
+<script>
+function cancelReservation(reservationId) {
+    var reason = prompt('Lý do hủy đặt bàn:');
+    if (reason !== null && reason.trim() !== '') {
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = '/Reservation/Cancel/' + reservationId;
+
+        var reasonInput = document.createElement('input');
+        reasonInput.type = 'hidden';
+        reasonInput.name = 'reason';
+        reasonInput.value = reason;
+
+        var tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '__RequestVerificationToken';
+        tokenInput.value = document.querySelector('[name="__RequestVerificationToken"]').value;
+
+        form.appendChild(reasonInput);
+        form.appendChild(tokenInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>

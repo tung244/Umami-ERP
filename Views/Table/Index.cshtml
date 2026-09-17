@@ -1,0 +1,274 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var items = ViewBag.Items as List<RestaurantTable>;
+    int page = (int)ViewBag.CurrentPage;
+    int total = (int)ViewBag.TotalPages;
+    string search = (string)ViewBag.SearchTerm;
+    string sort = (string)ViewBag.SortOrder;
+    string branchFilter = (string)ViewBag.BranchFilter;
+    string statusFilter = (string)ViewBag.StatusFilter;
+    string areaFilter = (string)ViewBag.AreaFilter;
+    var branches = ViewBag.Branches as List<Branch>;
+}
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="~/Dashboard">Trang chủ</a></li>
+                        <li class="breadcrumb-item active">@ViewBag.Title</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Danh sách bàn ăn</h3>
+                            <div class="card-tools">
+                                <a href="~/Table/Create" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus"></i> Thêm bàn mới
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <form method="get" class="mb-3">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <input type="text" name="search" value="@search" class="form-control" placeholder="Tìm theo mã bàn, tên bàn..." />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select name="branchFilter" class="form-control">
+                                            <option value="">Tất cả chi nhánh</option>
+                                            @if (branches != null)
+                                            {
+                                                foreach (var branch in branches)
+                                                {
+                                                    @if (branchFilter == branch.BranchId.ToString())
+                                                    {
+                                                        <option value="@branch.BranchId" selected>@branch.Name</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@branch.BranchId">@branch.Name</option>
+                                                    }
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select name="statusFilter" class="form-control">
+                                            <option value="">Tất cả trạng thái</option>
+                                            @if (statusFilter == "Available")
+                                            {
+                                                <option value="Available" selected>Trống</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="Available">Trống</option>
+                                            }
+                                            @if (statusFilter == "Occupied")
+                                            {
+                                                <option value="Occupied" selected>Đang sử dụng</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="Occupied">Đang sử dụng</option>
+                                            }
+                                            @if (statusFilter == "Reserved")
+                                            {
+                                                <option value="Reserved" selected>Đã đặt</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="Reserved">Đã đặt</option>
+                                            }
+                                            @if (statusFilter == "OutOfService")
+                                            {
+                                                <option value="OutOfService" selected>Bảo trì</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="OutOfService">Bảo trì</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" name="areaFilter" value="@areaFilter" class="form-control" placeholder="Khu vực..." />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select name="sort" class="form-control">
+                                            @if (sort == "code")
+                                            {
+                                                <option value="code" selected>Sắp xếp theo mã</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="code">Sắp xếp theo mã</option>
+                                            }
+                                            @if (sort == "name")
+                                            {
+                                                <option value="name" selected>Sắp xếp theo tên</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="name">Sắp xếp theo tên</option>
+                                            }
+                                            @if (sort == "area")
+                                            {
+                                                <option value="area" selected>Sắp xếp theo khu vực</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="area">Sắp xếp theo khu vực</option>
+                                            }
+                                            @if (sort == "seats")
+                                            {
+                                                <option value="seats" selected>Sắp xếp theo số ghế</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="seats">Sắp xếp theo số ghế</option>
+                                            }
+                                            @if (sort == "created_desc")
+                                            {
+                                                <option value="created_desc" selected>Mới nhất</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="created_desc">Mới nhất</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="submit" class="btn btn-secondary btn-block">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã bàn</th>
+                                            <th>Tên bàn</th>
+                                            <th>Khu vực</th>
+                                            <th>Số ghế</th>
+                                            <th>Trạng thái</th>
+                                            <th>Chi nhánh</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (items != null && items.Any())
+                                        {
+                                            foreach (var table in items)
+                                            {
+                                                <tr>
+                                                    <td>@table.Code</td>
+                                                    <td>@table.Name</td>
+                                                    <td>@table.Area</td>
+                                                    <td>@table.Seats</td>
+                                                    <td>
+                                                        @{ var statusClass = table.Status == TableStatus.Available ? "bg-success-50 text-success-600 border border-success-200" :
+                                                                   table.Status == TableStatus.Occupied ? "bg-warning-50 text-warning-700 border border-warning-200" :
+                                                                   table.Status == TableStatus.Reserved ? "bg-info-50 text-info-700 border border-info-200" : "bg-danger-50 text-danger-600 border border-danger-200"; }
+                                                        <span class="badge @statusClass">
+                                                            @if (table.Status == TableStatus.Available)
+                                                            {
+                                                                @: <i class="fas fa-check-circle"></i> Trống
+                                                            }
+                                                            else if (table.Status == TableStatus.Occupied)
+                                                            {
+                                                                @: <i class="fas fa-users"></i> Đang sử dụng
+                                                            }
+                                                            else if (table.Status == TableStatus.Reserved)
+                                                            {
+                                                                @: <i class="fas fa-clock"></i> Đã đặt
+                                                            }
+                                                            else if (table.Status == TableStatus.OutOfService)
+                                                            {
+                                                                @: <i class="fas fa-wrench"></i> Bảo trì
+                                                            }
+                                                        </span>
+                                                    </td>
+                                                    <td>@table.Branch?.Name</td>
+                                                    <td>
+                                                        <div class="btn-group">
+                                                            <a href="~/Table/Details/@table.TableId" class="btn btn-info btn-sm" title="Chi tiết">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <a href="~/Table/Edit/@table.TableId" class="btn btn-warning btn-sm" title="Sửa">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <a href="~/Table/GenerateQR/@table.TableId" class="btn btn-primary btn-sm" title="Tạo QR Code">
+                                                                <i class="fas fa-qrcode"></i>
+                                                            </a>
+                                                            <form method="post" action="~/Table/Delete/@table.TableId" style="display: inline;" onsubmit="return confirm('Bạn có chắc muốn xóa bàn này?')">
+                                                                <button type="submit" class="btn btn-danger btn-sm" title="Xóa">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="7" class="text-center">Không có dữ liệu</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if (total > 1)
+                            {
+                                <div class="d-flex justify-content-center">
+                                    <nav aria-label="Page navigation">
+                                        <ul class="pagination">
+                                            @if (page > 1)
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page=@(page-1)&search=@search&sort=@sort&branchFilter=@branchFilter&statusFilter=@statusFilter&areaFilter=@areaFilter">Trước</a>
+                                                </li>
+                                            }
+
+                                            @for (int i = Math.Max(1, page - 2); i <= Math.Min(total, page + 2); i++)
+                                            {
+                                                <li class="page-item @(i == page ? "active" : "")">
+                                                    <a class="page-link" href="?page=@i&search=@search&sort=@sort&branchFilter=@branchFilter&statusFilter=@statusFilter&areaFilter=@areaFilter">@i</a>
+                                                </li>
+                                            }
+
+                                            @if (page < total)
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page=@(page+1)&search=@search&sort=@sort&branchFilter=@branchFilter&statusFilter=@statusFilter&areaFilter=@areaFilter">Sau</a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </nav>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

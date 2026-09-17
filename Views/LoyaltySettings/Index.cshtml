@@ -1,0 +1,126 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var settings = ViewBag.Settings as List<LoyaltySettings>;
+}
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>@ViewBag.Title</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Loyalty")">Loyalty</a></li>
+                        <li class="breadcrumb-item active">Cấu hình</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-cog"></i> Thiết lập tỷ lệ tích điểm</h3>
+                        </div>
+                        <div class="card-body">
+                            @if (settings != null && settings.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 30%;">Tên cấu hình</th>
+                                                <th style="width: 40%;">Mô tả</th>
+                                                <th style="width: 15%;">Giá trị</th>
+                                                <th style="width: 15%;">Thao tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var setting in settings)
+                                            {
+                                                <tr>
+                                                    <td><strong>@setting.SettingName</strong></td>
+                                                    <td>
+                                                        <small class="text-muted" style="color: black">@setting.Description</small>
+                                                    </td>
+                                                    <td>
+                                                        @if (setting.DataType == "decimal" || setting.DataType == "number")
+                                                        {
+                                                            if (decimal.TryParse(setting.SettingValue, out var value))
+                                                            {
+                                                                <span class="badge badge-primary" style="color: black">@value.ToString("N0")</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge badge-primary" style="color: black">@setting.SettingValue</span>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge badge-primary" style="color: black">@setting.SettingValue</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <a href="@Url.Action("Edit", new { id = setting.LoyaltySettingsId })" 
+                                                           class="btn btn-warning btn-sm" title="Chỉnh sửa">
+                                                            <i class="fas fa-edit"></i> Sửa
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>Chưa có cấu hình nào</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hướng dẫn sử dụng -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card card-info">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-info-circle"></i> Hướng dẫn cấu hình</h3>
+                        </div>
+                        <div class="card-body">
+                            <h5>Các thông số quan trọng:</h5>
+                            <ul>
+                                <li><strong>Số tiền để nhận 1 điểm (POINTS_PER_AMOUNT):</strong> Ví dụ: 15,000 VND = 1 điểm thưởng</li>
+                                <li><strong>Đơn hàng tối thiểu (MIN_ORDER_FOR_POINTS):</strong> Giá trị đơn hàng tối thiểu để được tích điểm (VND)</li>
+                            </ul>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                <strong>Lưu ý:</strong> Thay đổi cấu hình sẽ áp dụng cho tất cả các đơn hàng mới. 
+                                Các giao dịch cũ vẫn giữ nguyên tỷ lệ tích điểm tại thời điểm đó.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

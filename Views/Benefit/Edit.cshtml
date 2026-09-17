@@ -1,0 +1,155 @@
+@model QuanLiKhoHang.Models.Entities.Benefit
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>@ViewBag.Title</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Loyalty")">Loyalty</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">Quyền lợi</a></li>
+                        <li class="breadcrumb-item active">Chỉnh sửa</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Chỉnh sửa quyền lợi</h3>
+                            <div class="card-tools">
+                                <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </a>
+                            </div>
+                        </div>
+
+                        <form method="post" class="needs-validation" novalidate>
+                            @Html.AntiForgeryToken()
+                            @Html.HiddenFor(m => m.BenefitId)
+                            @Html.HiddenFor(m => m.CreatedAt)
+
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="BenefitName">Tên quyền lợi *</label>
+                                    <input type="text" class="form-control" id="BenefitName" name="BenefitName" 
+                                           value="@Model.BenefitName" required />
+                                    @Html.ValidationMessage("BenefitName", new { @class = "text-danger" })
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="Description">Mô tả</label>
+                                    <textarea class="form-control" id="Description" name="Description" rows="2">@Model.Description</textarea>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="BenefitType">Loại quyền lợi *</label>
+                                            <select class="form-control" id="BenefitType" name="BenefitType" required>
+                                                <option value="">-- Chọn loại --</option>
+                                                <option value="Discount" selected="@(Model.BenefitType == "Discount")">Giảm giá</option>
+                                                <option value="FreeBirthdayCake" selected="@(Model.BenefitType == "FreeBirthdayCake")">Tặng bánh sinh nhật</option>
+                                                <option value="FreeParking" selected="@(Model.BenefitType == "FreeParking")">Miễn phí gửi xe</option>
+                                                <option value="PriorityBooking" selected="@(Model.BenefitType == "PriorityBooking")">Đặt bàn ưu tiên</option>
+                                                <option value="FreeShipping" selected="@(Model.BenefitType == "FreeShipping")">Miễn phí vận chuyển</option>
+                                                <option value="SpecialEvent" selected="@(Model.BenefitType == "SpecialEvent")">Tham dự sự kiện đặc biệt</option>
+                                                <option value="Other" selected="@(Model.BenefitType == "Other")">Khác</option>
+                                            </select>
+                                            @Html.ValidationMessage("BenefitType", new { @class = "text-danger" })
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="Icon">Icon</label>
+                                            <input type="text" class="form-control" id="Icon" name="Icon" 
+                                                   value="@Model.Icon" placeholder="fas fa-gift" />
+                                            <small class="text-muted">Font Awesome class</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="DiscountPercent">% Giảm giá</label>
+                                            <input type="number" class="form-control" id="DiscountPercent" name="DiscountPercent" 
+                                                   step="0.01" min="0" max="100" value="@Model.DiscountPercent" />
+                                            <small class="text-muted">Nếu quyền lợi là giảm theo %</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="DiscountAmount">Số tiền giảm (VND)</label>
+                                            <input type="number" class="form-control" id="DiscountAmount" name="DiscountAmount" 
+                                                   step="1000" min="0" value="@Model.DiscountAmount" />
+                                            <small class="text-muted">Nếu quyền lợi là giảm cố định</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="AdditionalData">Dữ liệu bổ sung (JSON)</label>
+                                    <textarea class="form-control" id="AdditionalData" name="AdditionalData" rows="3">@Model.AdditionalData</textarea>
+                                    <small class="text-muted">Dữ liệu bổ sung dạng JSON (tùy chọn)</small>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive"
+                                                value="true" checked="@(Model?.IsActive ?? true)" />
+                                            <label class="form-check-label" for="IsActive">
+                                                Hoạt động
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-footer">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Lưu thay đổi
+                                </button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary ml-2">
+                                    <i class="fas fa-times"></i> Hủy bỏ
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    </script>
+}

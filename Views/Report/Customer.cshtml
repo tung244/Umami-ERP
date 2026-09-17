@@ -1,0 +1,305 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    ViewData["title"] = "Phân tích Khách hàng";
+    ViewData["subTitle"] = "CLV, AOV, Cohort Retention và Customer Metrics";
+    var branches = ViewBag.Branches as List<Branch> ?? new List<Branch>();
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card radius-8 border mb-24">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <h5 class="mb-0 fw-bold">👥 Phân tích Khách hàng</h5>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <input type="date" id="startDate" class="form-control form-control-sm w-auto" value="@DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd")">
+                    <span class="text-secondary-light">đến</span>
+                    <input type="date" id="endDate" class="form-control form-control-sm w-auto" value="@DateTime.Today.ToString("yyyy-MM-dd")">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="refreshReports()">
+                        <iconify-icon icon="mdi:refresh"></iconify-icon> Làm mới
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row mb-24">
+    <div class="col-xxl-3 col-sm-6">
+        <div class="card radius-8 border-0 shadow-sm h-100">
+            <div class="card-body p-24">
+                <div class="d-flex align-items-center justify-content-between mb-16">
+                    <span class="mb-0 fw-medium text-secondary-light text-sm">Tổng khách hàng</span>
+                    <span class="text-primary-600 text-xl">
+                        <iconify-icon icon="mdi:account-group"></iconify-icon>
+                    </span>
+                </div>
+                <h4 class="mb-0 fw-bold" id="totalCustomers">0</h4>
+                <p class="text-sm text-secondary-light mt-8 mb-0">
+                    Tích cực: <span class="fw-semibold" id="activeCustomers">0</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xxl-3 col-sm-6">
+        <div class="card radius-8 border-0 shadow-sm h-100">
+            <div class="card-body p-24">
+                <div class="d-flex align-items-center justify-content-between mb-16">
+                    <span class="mb-0 fw-medium text-secondary-light text-sm">Khách hàng mới</span>
+                    <span class="text-success-main text-xl">
+                        <iconify-icon icon="mdi:account-plus"></iconify-icon>
+                    </span>
+                </div>
+                <h4 class="mb-0 fw-bold" id="newCustomers">0</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-xxl-3 col-sm-6">
+        <div class="card radius-8 border-0 shadow-sm h-100">
+            <div class="card-body p-24">
+                <div class="d-flex align-items-center justify-content-between mb-16">
+                    <span class="mb-0 fw-medium text-secondary-light text-sm">Khách quay lại</span>
+                    <span class="text-info-600 text-xl">
+                        <iconify-icon icon="mdi:account-check"></iconify-icon>
+                    </span>
+                </div>
+                <h4 class="mb-0 fw-bold" id="returningCustomers">0</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-xxl-3 col-sm-6">
+        <div class="card radius-8 border-0 shadow-sm h-100">
+            <div class="card-body p-24">
+                <div class="d-flex align-items-center justify-content-between mb-16">
+                    <span class="mb-0 fw-medium text-secondary-light text-sm">Tỷ lệ giữ chân</span>
+                    <span class="text-warning-600 text-xl">
+                        <iconify-icon icon="mdi:percent"></iconify-icon>
+                    </span>
+                </div>
+                <h4 class="mb-0 fw-bold" id="retentionRate">0%</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Value Analysis -->
+<div class="row mb-24">
+    <div class="col-12">
+        <div class="card radius-8 border">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-semibold">💎 Top khách hàng (Số đơn hàng & Tổng chi tiêu)</h6>
+                <select id="customerTier" class="form-select form-select-sm w-auto" onchange="loadCustomerValueChart()">
+                    <option value="">Tất cả tier</option>
+                    <option value="0">Bronze</option>
+                    <option value="1">Silver</option>
+                    <option value="2">Gold</option>
+                    <option value="3">Platinum</option>
+                </select>
+            </div>
+            <div class="card-body">
+                <div id="customerValueChart" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tier Distribution -->
+<div class="row mb-24">
+    <div class="col-12">
+        <div class="card radius-8 border">
+            <div class="card-header">
+                <h6 class="mb-0 fw-semibold">🏆 Phân bố thành viên theo hạng</h6>
+            </div>
+            <div class="card-body">
+                <div id="tierDistributionChart" style="min-height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let charts = {};
+    let reportConnection = null;
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(amount);
+    }
+
+    function formatNumber(num) {
+        return new Intl.NumberFormat('vi-VN').format(num);
+    }
+
+    function getFilters() {
+        return {
+            startDate: document.getElementById('startDate').value,
+            endDate: document.getElementById('endDate').value
+        };
+    }
+
+    async function loadCustomerMetrics() {
+        const filters = getFilters();
+        const response = await fetch(`/Report/CustomerMetrics?startDate=${filters.startDate}&endDate=${filters.endDate}`);
+        const result = await response.json();
+        if (!result.success) return;
+
+        document.getElementById('totalCustomers').textContent = formatNumber(result.metrics.totalCustomers);
+        document.getElementById('newCustomers').textContent = formatNumber(result.metrics.newCustomers);
+        document.getElementById('activeCustomers').textContent = formatNumber(result.metrics.activeCustomers);
+        document.getElementById('returningCustomers').textContent = formatNumber(result.metrics.returningCustomers);
+        document.getElementById('retentionRate').textContent = result.metrics.retentionRate + '%';
+    }
+
+    async function loadCustomerValueChart() {
+        const filters = getFilters();
+        const tier = document.getElementById('customerTier').value;
+        const response = await fetch(`/Report/CustomerValueAnalysis?startDate=${filters.startDate}&endDate=${filters.endDate}&tier=${tier}&limit=10`);
+        const result = await response.json();
+        if (!result.success) return;
+
+        const options = {
+            series: [{
+                name: 'Số đơn hàng',
+                data: result.data.map(d => d.orderCount)
+            }, {
+                name: 'Tổng chi tiêu',
+                data: result.data.map(d => d.totalSpent)
+            }],
+            chart: { type: 'bar', height: 400 },
+            plotOptions: { bar: { horizontal: false, columnWidth: '55%', endingShape: 'rounded' } },
+            dataLabels: { enabled: false },
+            colors: ['#f59e0b', '#0ea5e9'],
+            xaxis: {
+                categories: result.data.map(d => d.customerName),
+                labels: { rotate: -45 }
+            },
+            yaxis: [{
+                title: { text: 'Số đơn hàng' },
+                labels: { formatter: val => Math.round(val) }
+            }, {
+                opposite: true,
+                title: { text: 'Tổng chi tiêu' },
+                labels: { formatter: val => (val / 1000).toFixed(0) + 'k' }
+            }],
+            tooltip: { 
+                y: [{
+                    formatter: val => Math.round(val) + ' đơn'
+                }, {
+                    formatter: formatCurrency
+                }]
+            }
+        };
+
+        if (charts.customerValue) charts.customerValue.destroy();
+        charts.customerValue = new ApexCharts(document.querySelector("#customerValueChart"), options);
+        charts.customerValue.render();
+    }
+
+    async function loadTierDistributionChart() {
+        try {
+            const response = await fetch('/Report/TierDistributionAnalysis');
+            const result = await response.json();
+            if (!result.success || !result.data || result.data.length === 0) {
+                console.warn('No tier distribution data');
+                return;
+            }
+
+            // Map tier names to Vietnamese
+            const tierNames = {
+                'Bronze': 'Đồng',
+                'Silver': 'Bạc',
+                'Gold': 'Vàng',
+                'Platinum': 'Bạch kim'
+            };
+
+            const labels = result.data.map(x => tierNames[x.tier] || x.tier);
+            const series = result.data.map(x => x.count);
+            const colors = ['#cd7f32', '#c0c0c0', '#ffd700', '#e5e4e2'];
+
+            const options = {
+                chart: {
+                    type: 'pie',
+                    height: 350,
+                    fontFamily: 'inherit'
+                },
+                series: series,
+                labels: labels,
+                colors: colors,
+                legend: {
+                    position: 'bottom',
+                    fontSize: '14px'
+                },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function(val, opts) {
+                        const count = opts.w.globals.series[opts.seriesIndex];
+                        return count + ' (' + val.toFixed(1) + '%)';
+                    },
+                    style: {
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(val) {
+                            return formatNumber(val) + ' khách hàng';
+                        }
+                    }
+                }
+            };
+
+            if (charts.tierDistribution) charts.tierDistribution.destroy();
+            charts.tierDistribution = new ApexCharts(document.querySelector("#tierDistributionChart"), options);
+            charts.tierDistribution.render();
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    function refreshReports() {
+        loadCustomerMetrics();
+        loadCustomerValueChart();
+        loadTierDistributionChart();
+    }
+
+    // SignalR connection setup
+    async function initializeSignalR() {
+        reportConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/reportHub")
+            .withAutomaticReconnect()
+            .build();
+
+        // Lắng nghe sự kiện cập nhật customer
+        reportConnection.on("CustomerUpdated", (data) => {
+            console.log("Customer updated:", data);
+            refreshReports();
+        });
+
+        // Lắng nghe sự kiện cập nhật tất cả báo cáo
+        reportConnection.on("AllReportsUpdated", (data) => {
+            console.log("All reports updated:", data);
+            refreshReports();
+        });
+
+        try {
+            await reportConnection.start();
+            console.log("SignalR connected to ReportHub");
+        } catch (err) {
+            console.error("SignalR connection error:", err);
+            setTimeout(initializeSignalR, 5000);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshReports();
+        initializeSignalR();
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (reportConnection) {
+            reportConnection.stop();
+        }
+    });
+</script>
+}

@@ -1,0 +1,85 @@
+@using QuanLiKhoHang.Models.Entities
+@model List<QuanLiKhoHang.Controllers.AttendanceDailyViewModel>
+@{
+    var date = (DateTime)ViewBag.Date;
+  
+}
+
+
+<form method="get" class="form-inline mb-3">
+    <div class="form-group">
+        <label class="mr-2">Chọn ngày:</label>
+        <input type="date" name="date" value="@date.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <br/>
+    <br/>
+
+    <button type="submit" class="btn btn-primary ml-2">Xem</button>
+    <a href="@Url.Action("Index", "Attendance")" class="btn btn-secondary ml-2">Quay lại</a>
+</form>
+
+<table class="table table-striped table-sm">
+    <thead>
+        <tr>
+            <th>Nhân viên</th>
+
+            <th>Check-in</th>
+            <th>Check-out</th>
+            <th>Tổng giờ</th>
+          
+        </tr>
+    </thead>
+    <tbody>
+    @if (Model != null && Model.Any())
+    {
+        foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.StaffName</td>
+               
+                <td>@item.ClockInAt.ToString("g")</td>
+                <td>@(item.ClockOutAt.HasValue ? item.ClockOutAt.Value.ToString("g") : "-")</td>
+                <td>@(item.TotalHours.HasValue ? item.TotalHours.Value.ToString("0.##") : "-")</td>
+             
+            </tr>
+        }
+    }
+    else
+    {
+        <tr>
+            <td colspan="6">Không có bản ghi cho ngày này.</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        (function () {
+            if (!window.signalR) {
+                return;
+            }
+
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/attendanceHub")
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("AttendanceUpdated", function (payload) {
+                const staffName = payload?.staffName || payload?.StaffName || "nhân viên";
+                const direction = payload?.direction || payload?.Direction || "";
+                const verb = direction === "checkin" ? "check-in" : "check-out";
+                if (typeof showToast === "function") {
+                    showToast(`${staffName} vừa ${verb} bằng khuôn mặt.`, "info", 4000);
+                }
+                if (!document.hidden) {
+                    location.reload();
+                }
+            });
+
+            connection.start().catch(function (error) {
+                console.error("Không thể kết nối với AttendanceHub:", error);
+            });
+        })();
+    </script>
+}

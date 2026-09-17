@@ -1,0 +1,268 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var table = ViewBag.Table as RestaurantTable;
+    var currentOrders = ViewBag.CurrentOrders as List<Order>;
+}
+
+@if (table == null)
+{
+    <div class="alert alert-danger">
+        <h4><i class="icon fas fa-ban"></i> Lỗi!</h4>
+        Không tìm thấy bàn ăn.
+    </div>
+}
+else
+{
+    <div class="content-wrapper">
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="~/Dashboard">Trang chủ</a></li>
+                            <li class="breadcrumb-item"><a href="~/Table">Quản lý bàn ăn</a></li>
+                            <li class="breadcrumb-item active">@ViewBag.Title</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Thông tin bàn ăn</h3>
+                                <div class="card-tools">
+                                    <a href="~/Table/Edit/@table.TableId" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i> Sửa
+                                    </a>
+                                    <a href="~/Table" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-arrow-left"></i> Quay lại
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <dl class="row">
+                                            <dt class="col-sm-4">Mã bàn:</dt>
+                                            <dd class="col-sm-8">@table.Code</dd>
+
+                                            <dt class="col-sm-4">Tên bàn:</dt>
+                                            <dd class="col-sm-8">@table.Name</dd>
+
+                                            <dt class="col-sm-4">Khu vực:</dt>
+                                            <dd class="col-sm-8">@table.Area</dd>
+
+                                            <dt class="col-sm-4">Số ghế:</dt>
+                                            <dd class="col-sm-8">@table.Seats</dd>
+                                        </dl>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <dl class="row">
+                                            <dt class="col-sm-4">Chi nhánh:</dt>
+                                            <dd class="col-sm-8">@table.Branch?.Name</dd>
+
+                                            <dt class="col-sm-4">Trạng thái:</dt>
+                                            <dd class="col-sm-8">
+                                                @{ var statusClass = table.Status == TableStatus.Available ? "bg-success-50 text-success-600 border border-success-200" :
+                                                                   table.Status == TableStatus.Occupied ? "bg-warning-50 text-warning-700 border border-warning-200" :
+                                                                   table.Status == TableStatus.Reserved ? "bg-info-50 text-info-700 border border-info-200" : "bg-danger-50 text-danger-600 border border-danger-200"; }
+                                                <span class="badge @statusClass">
+                                                    @switch (table.Status)
+                                                    {
+                                                        case TableStatus.Available:
+                                                            @: <i class="fas fa-check-circle"></i> Trống
+                                                            break;
+                                                        case TableStatus.Occupied:
+                                                            @: <i class="fas fa-users"></i> Đang sử dụng
+                                                            break;
+                                                        case TableStatus.Reserved:
+                                                            @: <i class="fas fa-clock"></i> Đã đặt
+                                                            break;
+                                                        case TableStatus.OutOfService:
+                                                            @: <i class="fas fa-wrench"></i> Bảo trì
+                                                            break;
+                                                    }
+                                                </span>
+                                            </dd>
+
+                                            <dt class="col-sm-4">Loại bàn:</dt>
+                                            <dd class="col-sm-8">
+                                                @if (table.IsOutdoor)
+                                                {
+                                                    @: <i class="fas fa-sun text-warning"></i> Ngoài trời
+                                                }
+                                                else
+                                                {
+                                                    @: <i class="fas fa-home text-primary"></i> Trong nhà
+                                                }
+                                            </dd>
+
+                                            <dt class="col-sm-4">Ngày tạo:</dt>
+                                            <dd class="col-sm-8">@table.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                                        </dl>
+                                    </div>
+                                </div>
+
+                                @if (table.UpdatedAt.HasValue)
+                                {
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <small class="text-muted">
+                                                Cập nhật lần cuối: @table.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                            </small>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        @if (currentOrders != null && currentOrders.Any())
+                        {
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Đơn hàng hiện tại</h3>
+                                </div>
+
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Mã đơn</th>
+                                                    <th>Thời gian</th>
+                                                    <th>Trạng thái</th>
+                                                    <th>Tổng tiền</th>
+                                                    <th>Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var order in currentOrders)
+                                                {
+                                                    <tr>
+                                                        <td>@order.OrderNumber</td>
+                                                        <td>@order.PlacedAt.ToString("HH:mm dd/MM")</td>
+                                                        <td>
+                                                            <span class="badge @(order.Status == OrderStatus.Open ? "badge-info" :
+                                                                               order.Status == OrderStatus.Confirmed ? "badge-primary" :
+                                                                               order.Status == OrderStatus.InPreparation ? "badge-warning" :
+                                                                               order.Status == OrderStatus.Ready ? "badge-success" :
+                                                                               order.Status == OrderStatus.Served ? "badge-secondary" : "badge-dark")">
+                                                                @switch (order.Status)
+                                                                {
+                                                                    case OrderStatus.Open:
+                                                                        @: Mới
+                                                                        break;
+                                                                    case OrderStatus.Confirmed:
+                                                                        @: Đã xác nhận
+                                                                        break;
+                                                                    case OrderStatus.InPreparation:
+                                                                        @: Đang chuẩn bị
+                                                                        break;
+                                                                    case OrderStatus.Ready:
+                                                                        @: Sẵn sàng
+                                                                        break;
+                                                                    case OrderStatus.Served:
+                                                                        @: Đã phục vụ
+                                                                        break;
+                                                                    case OrderStatus.Paid:
+                                                                        @: Đã thanh toán
+                                                                        break;
+                                                                }
+                                                            </span>
+                                                        </td>
+                                                        <td>@order.TotalAmount.ToString("N0") VNĐ</td>
+                                                        <td>
+                                                            <a href="~/Order/Details/@order.OrderId" class="btn btn-info btn-sm">
+                                                                <i class="fas fa-eye"></i> Chi tiết
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Thao tác nhanh</h3>
+                            </div>
+
+                            <div class="card-body">
+                                @if (table.Status == TableStatus.Available)
+                                {
+                                    <form method="post" action="~/Table/ChangeStatus/@table.TableId" style="display: inline;">
+                                        <input type="hidden" name="newStatus" value="Reserved" />
+                                        <button type="submit" class="btn btn-info btn-block mb-2">
+                                            <i class="fas fa-clock"></i> Đặt bàn
+                                        </button>
+                                    </form>
+
+                                    <form method="post" action="~/Table/ChangeStatus/@table.TableId" style="display: inline;">
+                                        <input type="hidden" name="newStatus" value="OutOfService" />
+                                        <button type="submit" class="btn btn-warning btn-block mb-2" onclick="return confirm('Bạn có chắc muốn đưa bàn này vào bảo trì?')">
+                                            <i class="fas fa-wrench"></i> Bảo trì
+                                        </button>
+                                    </form>
+                                }
+                                else if (table.Status == TableStatus.Occupied)
+                                {
+                                    <form method="post" action="~/Table/ChangeStatus/@table.TableId" style="display: inline;">
+                                        <input type="hidden" name="newStatus" value="Available" />
+                                        <button type="submit" class="btn btn-success btn-block mb-2">
+                                            <i class="fas fa-check"></i> Đánh dấu trống
+                                        </button>
+                                    </form>
+                                }
+                                else if (table.Status == TableStatus.Reserved)
+                                {
+                                    <form method="post" action="~/Table/ChangeStatus/@table.TableId" style="display: inline;">
+                                        <input type="hidden" name="newStatus" value="Occupied" />
+                                        <button type="submit" class="btn btn-primary btn-block mb-2">
+                                            <i class="fas fa-users"></i> Khách đã đến
+                                        </button>
+                                    </form>
+
+                                    <form method="post" action="~/Table/ChangeStatus/@table.TableId" style="display: inline;">
+                                        <input type="hidden" name="newStatus" value="Available" />
+                                        <button type="submit" class="btn btn-secondary btn-block mb-2">
+                                            <i class="fas fa-times"></i> Hủy đặt bàn
+                                        </button>
+                                    </form>
+                                }
+                                else if (table.Status == TableStatus.OutOfService)
+                                {
+                                    <form method="post" action="~/Table/ChangeStatus/@table.TableId" style="display: inline;">
+                                        <input type="hidden" name="newStatus" value="Available" />
+                                        <button type="submit" class="btn btn-success btn-block mb-2">
+                                            <i class="fas fa-play"></i> Đưa vào sử dụng
+                                        </button>
+                                    </form>
+                                }
+
+                                <hr />
+
+                                <a href="~/Order/Create?tableId=@table.TableId" class="btn btn-primary btn-block">
+                                    <i class="fas fa-plus"></i> Tạo đơn hàng mới
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+}

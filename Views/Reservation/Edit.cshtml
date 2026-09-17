@@ -1,0 +1,238 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var branches = ViewBag.Branches as List<Branch>;
+    var customers = ViewBag.Customers as List<Customer>;
+    var reservation = ViewBag.Reservation as Reservation;
+}
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>@ViewBag.Title</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="~/Dashboard">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a href="~/Reservation">Quản lý đặt bàn</a></li>
+                        <li class="breadcrumb-item active">@ViewBag.Title</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Chỉnh sửa đặt bàn</h3>
+                        </div>
+
+                        <form method="post" class="card-body">
+                            @Html.AntiForgeryToken()
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="BranchId">Chi nhánh <span class="text-danger">*</span></label>
+                                        <select id="BranchId" name="BranchId" class="form-control" required onchange="loadAvailableTables()">
+                                            <option value="">Chọn chi nhánh</option>
+                                            @if (branches != null)
+                                            {
+                                                foreach (var branch in branches)
+                                                {
+                                                    if (reservation.BranchId == branch.BranchId)
+                                                    {
+                                                        <option value="@branch.BranchId" selected>@branch.Name</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@branch.BranchId">@branch.Name</option>
+                                                    }
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="CustomerId">Khách hàng</label>
+                                        <select id="CustomerId" name="CustomerId" class="form-control">
+                                            <option value="">Khách vãng lai</option>
+                                            @if (customers != null)
+                                            {
+                                                foreach (var customer in customers)
+                                                {
+                                                    if (reservation.CustomerId == customer.CustomerId)
+                                                    {
+                                                        <option value="@customer.CustomerId" selected>@((customer.FirstName ?? "") + " " + (customer.LastName ?? "")).Trim() - @customer.PhoneNumber</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@customer.CustomerId">@((customer.FirstName ?? "") + " " + (customer.LastName ?? "")).Trim() - @customer.PhoneNumber</option>
+                                                    }
+                                                }
+                                            }
+                                        </select>
+                                        <small class="form-text text-muted">Để trống nếu là khách vãng lai</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="PartySize">Số người <span class="text-danger">*</span></label>
+                                        <input type="number" id="PartySize" name="PartySize" class="form-control" required min="1" max="50" value="@reservation.PartySize" onchange="loadAvailableTables()" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="Source">Nguồn đặt bàn <span class="text-danger">*</span></label>
+                                        <select id="Source" name="Source" class="form-control" required>
+                                            @if (reservation.Source == ReservationSource.Phone)
+                                            {
+                                                <option value="Phone" selected>Điện thoại</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="Phone">Điện thoại</option>
+                                            }
+                                            @if (reservation.Source == ReservationSource.WalkIn)
+                                            {
+                                                <option value="WalkIn" selected>Đến trực tiếp</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="WalkIn">Đến trực tiếp</option>
+                                            }
+                                            @if (reservation.Source == ReservationSource.Web)
+                                            {
+                                                <option value="Web" selected>Website</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="Web">Website</option>
+                                            }
+                                            @if (reservation.Source == ReservationSource.App)
+                                            {
+                                                <option value="App" selected>Ứng dụng</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="App">Ứng dụng</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="ReserveStartAt">Thời gian bắt đầu <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" id="ReserveStartAt" name="ReserveStartAt" class="form-control" required value="@reservation.ReserveStartAt.ToString("yyyy-MM-ddTHH:mm")" onchange="loadAvailableTables()" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="ReserveEndAt">Thời gian kết thúc <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" id="ReserveEndAt" name="ReserveEndAt" class="form-control" required value="@reservation.ReserveEndAt.ToString("yyyy-MM-ddTHH:mm")" onchange="loadAvailableTables()" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="ReservedTableId">Bàn được đặt</label>
+                                        <select id="ReservedTableId" name="ReservedTableId" class="form-control">
+                                            <option value="">Chọn bàn sau</option>
+                                            @if (reservation.ReservedTable != null)
+                                            {
+                                                <option value="@reservation.ReservedTableId" selected>@(reservation.ReservedTable.Name + " (" + reservation.ReservedTable.Code + ")") - @reservation.ReservedTable.Seats chỗ</option>
+                                            }
+                                        </select>
+                                        <small class="form-text text-muted">Bàn sẽ được cập nhật tự động dựa trên thời gian và số người</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="Notes">Ghi chú</label>
+                                        <textarea id="Notes" name="Notes" class="form-control" rows="3">@reservation.Notes</textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Cập nhật đặt bàn
+                                        </button>
+                                        <a href="~/Reservation/Details/@reservation.ReservationId" class="btn btn-secondary ml-2">
+                                            <i class="fas fa-times"></i> Hủy
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+function loadAvailableTables() {
+    const branchId = document.getElementById('BranchId').value;
+    const partySize = document.getElementById('PartySize').value;
+    const startTime = document.getElementById('ReserveStartAt').value;
+    const endTime = document.getElementById('ReserveEndAt').value;
+
+    if (!branchId || !partySize || !startTime || !endTime) {
+        return;
+    }
+
+    // Convert datetime-local to ISO format
+    const startDateTime = new Date(startTime).toISOString();
+    const endDateTime = new Date(endTime).toISOString();
+
+    fetch(`/Reservation/GetAvailableTables?branchId=${branchId}&partySize=${partySize}&startTime=${encodeURIComponent(startDateTime)}&endTime=${encodeURIComponent(endDateTime)}`)
+        .then(response => response.json())
+        .then(data => {
+            const tableSelect = document.getElementById('ReservedTableId');
+            const currentValue = tableSelect.value;
+
+            tableSelect.innerHTML = '<option value="">Chọn bàn</option>';
+
+            data.forEach(table => {
+                const option = document.createElement('option');
+                option.value = table.tableId;
+                option.textContent = `${table.name} (${table.code}) - ${table.seats} chỗ - ${table.area}`;
+                if (table.tableId === currentValue) {
+                    option.selected = true;
+                }
+                tableSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading available tables:', error);
+        });
+}
+
+// Load available tables on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAvailableTables();
+});
+</script>

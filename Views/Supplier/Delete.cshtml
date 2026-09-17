@@ -1,0 +1,13 @@
+@using QuanLiKhoHang.Models.Entities
+@model Supplier
+@{
+    ViewBag.Title = "Xác nhận xóa";
+}
+
+<h3>@ViewBag.Title</h3>
+<p>Bạn có chắc muốn xóa nhà cung cấp <strong>@Model.Name</strong>?</p>
+<form method="post" action="@Url.Action("Delete", new { id = Model.SupplierId })">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-danger">Xóa</button>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+</form>

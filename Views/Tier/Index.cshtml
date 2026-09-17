@@ -1,0 +1,127 @@
+@model List<QuanLiKhoHang.Models.Entities.TierConfig>
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>@ViewBag.Title</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Loyalty")">Loyalty</a></li>
+                        <li class="breadcrumb-item active">Hạng thành viên</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-medal"></i> Danh sách hạng thành viên</h3>
+                            <div class="card-tools">
+                                <a href="@Url.Action("Create")" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus"></i> Thêm hạng mới
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            @if (Model != null && Model.Any())
+                            {
+                                <div class="row">
+                                    @foreach (var tier in Model)
+                                    {
+                                        var tierColor = tier.Color ?? (tier.Tier.ToString() == "Bronze" ? "secondary" : (tier.Tier.ToString() == "Silver" ? "info" : "warning"));
+                                        
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card @(tier.IsActive ? "" : "bg-light")">
+                                                <div class="card-header bg-@tierColor">
+                                                    <h5 class="card-title mb-0 text-white">
+                                                        <i class="@(tier.Icon ?? "fas fa-medal")"></i> @tier.TierName
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p class="text-muted">@tier.Description</p>
+                                                    
+                                                    <div class="mb-2">
+                                                        <strong>Điểm yêu cầu:</strong><br />
+                                                        @tier.MinPoints.ToString("N0") @(tier.MaxPoints.HasValue ? $"- {tier.MaxPoints.Value.ToString("N0")}" : "+") điểm
+                                                    </div>
+
+                                                    <div class="mb-2">
+                                                        <strong>Quyền lợi:</strong><br />
+                                                        @if (tier.TierBenefits != null && tier.TierBenefits.Any())
+                                                        {
+                                                            <ul class="list-unstyled mb-0">
+                                                                @foreach (var tb in tier.TierBenefits.Where(x => x.IsActive))
+                                                                {
+                                                                    <li><i class="fas fa-check text-success"></i> @tb.Benefit?.BenefitName</li>
+                                                                }
+                                                            </ul>
+                                                        }
+                                                        else
+                                                        {
+                                                            <small class="text-muted">Chưa có quyền lợi</small>
+                                                        }
+                                                    </div>
+
+                                                    <div class="mt-3">
+                                                        <span class="badge badge-@(tier.IsActive ? "success" : "secondary")">
+                                                            @(tier.IsActive ? "Đang hoạt động" : "Ngừng hoạt động")
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer">
+                                                    <div class="btn-group">
+                                                        <a href="@Url.Action("Edit", new { id = tier.TierConfigId })" 
+                                                           class="btn btn-warning btn-sm" title="Chỉnh sửa">
+                                                            <i class="fas fa-edit"></i> Sửa
+                                                        </a>
+                                                        @if (tier.IsActive)
+                                                        {
+                                                            <form method="post" action="@Url.Action("Delete", new { id = tier.TierConfigId })" style="display:inline;"
+                                                                  onsubmit="return confirm('Bạn có chắc chắn muốn vô hiệu hóa hạng này?');">
+                                                                @Html.AntiForgeryToken()
+                                                                <button type="submit" class="btn btn-danger btn-sm" title="Vô hiệu hóa">
+                                                                    <i class="fas fa-ban"></i> Tắt
+                                                                </button>
+                                                            </form>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-medal fa-3x mb-3"></i>
+                                    <p>Chưa có hạng thành viên nào</p>
+                                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Thêm hạng đầu tiên
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

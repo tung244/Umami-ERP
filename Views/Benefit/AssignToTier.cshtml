@@ -1,0 +1,142 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var benefit = ViewBag.Benefit as Benefit;
+    var tiers = ViewBag.Tiers as List<TierConfig>;
+    var assignedTierIds = ViewBag.AssignedTierIds as List<Guid>;
+}
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>@ViewBag.Title</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Loyalty")">Loyalty</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">Quyền lợi</a></li>
+                        <li class="breadcrumb-item active">Gán quyền lợi</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="@(benefit?.Icon ?? "fas fa-gift")"></i> @benefit?.BenefitName
+                            </h3>
+                            <div class="card-tools">
+                                <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </a>
+                            </div>
+                        </div>
+
+                        <form method="post">
+                            @Html.AntiForgeryToken()
+
+                            <div class="card-body">
+                                @if (!string.IsNullOrEmpty(benefit?.Description))
+                                {
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> @benefit.Description
+                                    </div>
+                                }
+
+                                <h5>Chọn hạng thành viên áp dụng quyền lợi này:</h5>
+
+                                @if (tiers != null && tiers.Any())
+                                {
+                                    <div class="row">
+                                        @foreach (var tier in tiers)
+                                        {
+                                            var isChecked = assignedTierIds?.Contains(tier.TierConfigId) ?? false;
+                                            var tierColor = tier.Color ?? "primary";
+
+                                            <div class="col-md-6 mb-3">
+                                                <div class="card @(isChecked ? "border-" + tierColor + " border-2" : "")">
+                                                    <div class="card-body">
+                                                        <div class="form-check" style="display: flex; align-items: center; gap: 10px;">
+                                                            <input type="checkbox" class="form-check-input" 
+                                                                   id="tier_@tier.TierConfigId" 
+                                                                   name="selectedTierIds" 
+                                                                   value="@tier.TierConfigId"
+                                                                   style="width: 20px; height: 20px; cursor: pointer; margin-top: 0;"
+                                                                   @(isChecked ? "checked" : "") />
+                                                            <label class="form-check-label" for="tier_@tier.TierConfigId" style="cursor: pointer; margin-bottom: 0;">
+                                                                <strong style="font-size: 16px;">
+                                                                    <i class="@(tier.Icon ?? "fas fa-medal")"></i> @tier.TierName
+                                                                </strong>
+                                                            </label>
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(tier.Description))
+                                                        {
+                                                            <p class="text-muted mb-1 mt-2" style="margin-left: 30px;">@tier.Description</p>
+                                                        }
+                                                        <small class="text-muted" style="margin-left: 30px; display: block;">
+                                                            Điểm: @tier.MinPoints.ToString("N0")@(tier.MaxPoints.HasValue ? $" - {tier.MaxPoints.Value.ToString("N0")}" : "+")
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> 
+                                        Chưa có hạng thành viên nào. Vui lòng tạo hạng thành viên trước.
+                                        <a href="@Url.Action("Create", "Tier")" class="btn btn-primary btn-sm ml-2">
+                                            <i class="fas fa-plus"></i> Tạo hạng
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (tiers != null && tiers.Any())
+                            {
+                                <div class="card-footer">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Lưu gán quyền lợi
+                                    </button>
+                                    <a href="@Url.Action("Index")" class="btn btn-secondary ml-2">
+                                        <i class="fas fa-times"></i> Hủy bỏ
+                                    </a>
+                                </div>
+                            }
+                        </form>
+                    </div>
+
+                    <!-- Hướng dẫn -->
+                    <div class="card card-info">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-question-circle"></i> Hướng dẫn</h3>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Cách gán quyền lợi cho hạng thành viên:</strong></p>
+                            <ol>
+                                <li>Chọn các hạng thành viên mà bạn muốn áp dụng quyền lợi này</li>
+                                <li>Có thể chọn nhiều hạng cùng lúc</li>
+                                <li>Bỏ chọn để loại bỏ quyền lợi khỏi hạng đó</li>
+                                <li>Nhấn "Lưu gán quyền lợi" để hoàn tất</li>
+                            </ol>
+                            <div class="alert alert-warning mb-0">
+                                <i class="fas fa-info-circle"></i> 
+                                <strong>Lưu ý:</strong> Các thay đổi sẽ áp dụng ngay lập tức cho tất cả khách hàng thuộc hạng đó.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

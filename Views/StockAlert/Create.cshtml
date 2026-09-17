@@ -1,0 +1,90 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var items = ViewBag.Items as List<InventoryItem>;
+    var title = ViewBag.Title as string;
+}
+
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">@title</h5>
+        </div>
+        <div class="card-body">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <h6 class="alert-heading mb-2">Có lỗi xảy ra:</h6>
+                    <ul class="mb-0">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@error.ErrorMessage</li>
+                        }
+                    </ul>
+                </div>
+            }
+            
+            <form method="post" action="/StockAlert/Create">
+                <div class="form-group mb-3">
+                    <label for="itemId" class="form-label fw-bold">Chọn sản phẩm <span class="text-danger">*</span></label>
+                    <select id="itemId" name="itemId" class="form-select" required>
+                        <option value="">-- Chọn sản phẩm --</option>
+                        @if (items != null)
+                        {
+                            @foreach (var item in items)
+                            {
+                                <option value="@item.ItemId">@item.Name (@item.Sku) - Tồn: @item.CurrentQuantity @item.Unit</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="minimumThreshold" class="form-label fw-bold">Ngưỡng cảnh báo <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="number" id="minimumThreshold" name="minimumThreshold" class="form-control" 
+                               placeholder="Nhập ngưỡng tối thiểu" step="0.01" min="0" required />
+                        <span class="input-group-text">đơn vị</span>
+                    </div>
+                    <small class="form-text text-muted d-block mt-1">Để 0 để dùng giá trị global mặc định</small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="alertEmails" class="form-label fw-bold">Email nhận cảnh báo</label>
+                    <textarea id="alertEmails" name="alertEmails" class="form-control" rows="3" 
+                              placeholder="Nhập email nhận cảnh báo (cách nhau bằng dấu phẩy)&#10;VD: admin@restaurant.com, warehouse@restaurant.com"></textarea>
+                    <small class="form-text text-muted d-block mt-1">
+                        Để trống để dùng email global từ cấu hình. Nếu có email ở đây sẽ dùng email này thay vì global.
+                    </small>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input type="checkbox" id="isEnabled" name="isEnabled" value="true" class="form-check-input" checked />
+                    <label class="form-check-label" for="isEnabled">
+                        <strong>Bật cảnh báo cho sản phẩm này</strong>
+                    </label>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Lưu cảnh báo
+                    </button>
+                    <a href="/StockAlert/Index" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .form-label {
+        color: #333;
+    }
+    .text-danger {
+        color: #dc3545 !important;
+    }
+</style>

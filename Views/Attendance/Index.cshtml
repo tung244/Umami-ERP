@@ -1,0 +1,329 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    ViewData["Title"] = "Quản lý chấm công";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var items = ViewBag.Items as List<Attendance>;
+}
+<!-- Thống kê nhanh -->
+                                <div class="row gy-4">
+      <div class="col-xxxl-9">
+        <div class="row gy-4">
+            <div class="col-xxl-3 col-xl-4 col-sm-6">
+            <div class="card p-3 shadow-2 radius-8 h-100 bg-gradient-end-6">
+                <div class="card-body p-0">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="mb-0 w-48-px h-48-px bg-cyan-100 text-cyan-600 flex-shrink-0 text-white d-flex justify-content-center align-items-center rounded-circle h6 mb-0">
+                        <i class="ri-group-fill"></i> 
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-2">@(items?.Count ?? 0)</h6>
+                            <span class="fw-medium text-secondary-light text-sm">Tổng bản ghi</span>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div class="col-xxl-3 col-xl-4 col-sm-6">
+            <div class="card p-3 shadow-2 radius-8 h-100 bg-gradient-end-4">
+                <div class="card-body p-0">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="mb-0 w-48-px h-48-px bg-lilac-100 text-lilac-600 flex-shrink-0 text-white d-flex justify-content-center align-items-center rounded-circle h6 mb-0">
+                        <i class="ri-award-fill"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-2">@(items?.Count(a => a.ClockOutAt.HasValue) ?? 0)</h6>
+                            <span class="fw-medium text-secondary-light text-sm">Đã hoàn thành</span>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div class="col-xxl-3 col-xl-4 col-sm-6">
+            <div class="card p-3 shadow-2 radius-8 h-100 bg-gradient-end-1">
+                <div class="card-body p-0">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="mb-0 w-48-px h-48-px bg-primary-100 text-primary-600 flex-shrink-0 text-white d-flex justify-content-center align-items-center rounded-circle h6 mb-0">
+                        <i class="ri-group-fill"></i> 
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-2">@(items?.Count(a => !a.ClockOutAt.HasValue) ?? 0)</h6>
+                            <span class="fw-medium text-secondary-light text-sm">Đang làm việc</span>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div class="col-xxl-3 col-xl-4 col-sm-6">
+            <div class="card p-3 shadow-2 radius-8 h-100 bg-gradient-end-1">
+                <div class="card-body p-0">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="mb-0 w-48-px h-48-px bg-success-100 text-success-600 flex-shrink-0 text-white d-flex justify-content-center align-items-center rounded-circle h6 mb-0">
+                        <i class="ri-wallet-3-fill"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-2">@(items?.Where(a => a.ClockOutAt.HasValue).Sum(a => (a.ClockOutAt!.Value - a.ClockInAt).TotalHours).ToString("F1") ?? "0.0")</h6>
+                            <span class="fw-medium text-secondary-light text-sm">Tổng giờ làm việc</span>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+        </div>
+    </div>
+<div class="row" style="margin-top: 20px;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Danh sách chấm công</h4>
+                <p class="card-title-desc">Quản lý và theo dõi thời gian làm việc của nhân viên</p>
+            </div>
+            <div class="card-body">
+                <!-- Bộ lọc tìm kiếm -->
+                <form method="get" class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label for="searchString" class="form-label">Tìm kiếm nhân viên</label>
+                        <input type="text" class="form-control" id="searchString" name="searchString"
+                               value="@ViewBag.SearchString" placeholder="Tên hoặc mã nhân viên">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="startDate" class="form-label">Từ ngày</label>
+                        <input type="date" class="form-control" id="startDate" name="startDate"
+                               value="@(ViewBag.StartDate?.ToString("yyyy-MM-dd"))">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="endDate" class="form-label">Đến ngày</label>
+                        <input type="date" class="form-control" id="endDate" name="endDate"
+                               value="@(ViewBag.EndDate?.ToString("yyyy-MM-dd"))">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="ri-search-line"></i> Tìm kiếm
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <a href="@Url.Action("Create")" class="btn btn-success">
+                                <i class="ri-add-line"></i> Thêm mới
+                            </a>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Danh sách chấm công -->
+                <div class="table-responsive" style="min-height: 250px;">
+                    <table class="table table-centered table-nowrap mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã NV</th>
+                                <th>Tên nhân viên</th>
+                                <th>Chi nhánh</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Giờ làm việc</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (items != null)
+                            {
+                                @foreach (var item in items)
+                                {
+                                    <tr>
+                                        <td>@item.Staff?.EmployeeNumber</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            @if (item.Staff != null && !string.IsNullOrEmpty(item.Staff.AvatarUrl))
+                                            {
+                                                <img src="@item.Staff.AvatarUrl" alt="Avatar" class="avatar-xs rounded-circle me-2">
+                                            }
+                                            else if (item.Staff != null)
+                                            {
+                                                <div class="avatar-xs rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2">
+                                                    <span>@item.Staff.FirstName[0]@item.Staff.LastName[0]</span>
+                                                </div>
+                                            }
+                                            @if (item.Staff != null)
+                                            {
+                                                <div>
+                                                    <p class="font-size-14 mb-0">@item.Staff.FirstName @item.Staff.LastName</p>
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>@(item.Staff?.Branch?.Name)</td>
+                                    <td>@item.ClockInAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        @if (item.ClockOutAt.HasValue)
+                                        {
+                                            @item.ClockOutAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">Chưa check-out</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.ClockOutAt.HasValue)
+                                        {
+                                            <text>@((item.ClockOutAt.Value - item.ClockInAt).TotalHours.ToString("F1")) giờ</text>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.ClockOutAt.HasValue)
+                                        {
+                                            <span class="badge bg-success">Hoàn thành</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-info">Đang làm việc</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <a href="#" class="dropdown-toggle card-drop" data-bs-toggle="dropdown" aria-expanded="false">
+                                                
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a href="@Url.Action("Details", new { id = item.AttendanceId })" class="dropdown-item">Xem chi tiết</a></li>
+                                                <li><a href="@Url.Action("Edit", new { id = item.AttendanceId })" class="dropdown-item">Chỉnh sửa</a></li>
+                                                @if (!item.ClockOutAt.HasValue)
+                                                {
+                                                    <li>
+                                                        <form method="post" action="@Url.Action("ClockOut", new { id = item.AttendanceId })" style="display: inline;">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="dropdown-item text-warning" onclick="return confirm('Xác nhận check-out?')">
+                                                                Check-out
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                }
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form method="post" action="@Url.Action("Delete", new { id = item.AttendanceId })" style="display: inline;">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Bạn có chắc muốn xóa?')">
+                                                            Xóa
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="10" class="text-center">Không có dữ liệu</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Phân trang -->
+                @{
+                    var prevDisabled = ViewBag.CurrentPage == 1 ? "disabled" : "";
+                    var nextDisabled = ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "";
+                }
+
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @prevDisabled">
+                            <a class="page-link" href="@Url.Action("Index", new { pageNumber = ViewBag.CurrentPage - 1, searchString = ViewBag.SearchString, startDate = ViewBag.StartDate, endDate = ViewBag.EndDate })" tabindex="-1">Trước</a>
+                        </li>
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            var activeClass = i == ViewBag.CurrentPage ? "active" : "";
+                            <li class="page-item @activeClass">
+                                <a class="page-link" href="@Url.Action("Index", new { pageNumber = i, searchString = ViewBag.SearchString, startDate = ViewBag.StartDate, endDate = ViewBag.EndDate })">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @nextDisabled">
+                            <a class="page-link" href="@Url.Action("Index", new { pageNumber = ViewBag.CurrentPage + 1, searchString = ViewBag.SearchString, startDate = ViewBag.StartDate, endDate = ViewBag.EndDate })">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const scheduleReload = () => {
+                setTimeout(() => {
+                    if (!document.hidden) {
+                        location.reload();
+                    }
+                }, 30000);
+            };
+
+            let pendingReload = false;
+
+            const triggerReload = () => {
+                if (!document.hidden) {
+                    location.reload();
+                } else {
+                    pendingReload = true;
+                }
+            };
+
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden && pendingReload) {
+                    pendingReload = false;
+                    location.reload();
+                }
+            });
+
+            scheduleReload();
+
+            if (window.signalR) {
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/attendanceHub")
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on("AttendanceUpdated", function (payload) {
+                    const staffName = payload?.staffName || payload?.StaffName || "nhân viên";
+                    const direction = payload?.direction || payload?.Direction || "";
+                    const verb = direction === "checkin" ? "check-in" : "check-out";
+                    if (typeof showToast === "function") {
+                        showToast(`${staffName} vừa ${verb} bằng khuôn mặt.`, "info", 4000);
+                    }
+                    triggerReload();
+                });
+
+                connection.start().catch(function (error) {
+                    console.error("Không thể kết nối với AttendanceHub:", error);
+                });
+            }
+        })();
+    </script>
+}

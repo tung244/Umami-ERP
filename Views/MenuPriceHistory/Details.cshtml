@@ -1,0 +1,160 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var item = ViewBag.Item as MenuPriceHistory;
+    var isActive = item?.EffectiveTo == null;
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="ri-file-list-line me-2"></i>@ViewBag.Title</h5>
+        @if (item != null)
+        {
+            <div>
+                <a href="@Url.Action("Edit", new { id = item.MenuPriceId })" class="btn btn-warning btn-sm">
+                    <i class="ri-edit-line me-1"></i>Chỉnh sửa
+                </a>
+                <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                    <i class="ri-arrow-left-line me-1"></i>Quay lại
+                </a>
+            </div>
+        }
+    </div>
+    <div class="card-body">
+        @if (item != null)
+        {
+            @if (isActive)
+            {
+                <div class="alert alert-success mb-4">
+                    <i class="ri-checkbox-circle-line me-2"></i>
+                    <strong>Đây là giá đang áp dụng</strong>
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-restaurant-line me-2"></i>Thông tin món ăn</h6>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td width="40%" class="text-muted">Tên món:</td>
+                            <td><strong>@item.Dish?.Name</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Mã món (SKU):</td>
+                            <td>@(item.Dish?.Sku ?? "N/A")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Danh mục:</td>
+                            <td>@item.Dish?.Category?.Name</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-money-dollar-circle-line me-2"></i>Thông tin giá</h6>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td width="40%" class="text-muted">Giá:</td>
+                            <td><span class="badge bg-primary fs-6">@item.Price.ToString("N0") VND</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Hiệu lực từ:</td>
+                            <td><strong>@item.EffectiveFrom.ToString("dd/MM/yyyy HH:mm")</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Hiệu lực đến:</td>
+                            <td>
+                                @if (item.EffectiveTo.HasValue)
+                                {
+                                    <span>@item.EffectiveTo.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Đang áp dụng</span>
+                                }
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-user-line me-2"></i>Người thay đổi</h6>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td width="40%" class="text-muted">Nhân viên:</td>
+                            <td>
+                                @if (item.ChangedByStaff != null)
+                                {
+                                    <strong>@($"{item.ChangedByStaff.FirstName} {item.ChangedByStaff.LastName}")</strong>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Không có thông tin</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Lý do thay đổi:</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.Reason))
+                                {
+                                    <div class="alert alert-light mb-0">
+                                        <i class="ri-information-line me-1"></i>@item.Reason
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Không có ghi chú</span>
+                                }
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="col-md-6">
+                    <h6 class="mb-3"><i class="ri-time-line me-2"></i>Dấu thời gian</h6>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td width="40%" class="text-muted">Ngày tạo:</td>
+                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Lần cập nhật cuối:</td>
+                            <td>
+                                @if (item.UpdatedAt.HasValue)
+                                {
+                                    @item.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm:ss")
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Chưa có cập nhật</span>
+                                }
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a href="@Url.Action("Edit", new { id = item.MenuPriceId })" class="btn btn-warning">
+                    <i class="ri-edit-line me-1"></i>Chỉnh sửa
+                </a>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="ri-arrow-left-line me-1"></i>Quay lại danh sách
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-danger">
+                <i class="ri-error-warning-line me-2"></i>Không tìm thấy lịch sử giá!
+            </div>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="ri-arrow-left-line me-1"></i>Quay lại danh sách
+            </a>
+        }
+    </div>
+</div>

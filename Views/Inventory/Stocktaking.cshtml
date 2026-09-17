@@ -1,0 +1,185 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var transactions = ViewBag.Transactions as List<StockTransaction>;
+    int page = (int)ViewBag.CurrentPage;
+    int total = (int)ViewBag.TotalPages;
+    string stocktakingDate = (string)ViewBag.StocktakingDate;
+    int totalImport = (int)ViewBag.TotalImport;
+    int totalExport = (int)ViewBag.TotalExport;
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">@ViewBag.Title</h4>
+                <div class="card-tools">
+                    <a href="@Url.Action("Index", "Inventory")" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body">
+            <!-- Thống kê tổng quát -->
+                <div class="row mb-4" style="margin-botton:20px">
+                    <div class="col-md-4">
+                        <div class="card bg-info-50 border border-info-200">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-info-600 mb-0 fw-medium">Tổng nhập trong ngày</p>
+                                        <h4 class="text-info-700 fw-bold">@totalImport</h4>
+                                    </div>
+                                    <div class="w-50-px h-50-px bg-info-600 rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
+                                        <iconify-icon icon="mingcute:arrow-down-fill" class="icon text-white text-2xl"></iconify-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card bg-warning-50 border border-warning-200">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-warning-600 mb-0 fw-medium">Tổng xuất trong ngày</p>
+                                        <h4 class="text-warning-700 fw-bold">@totalExport</h4>
+                                    </div>
+                                    <div class="w-50-px h-50-px bg-warning-600 rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
+                                        <iconify-icon icon="mingcute:arrow-up-fill" class="icon text-white text-2xl"></iconify-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card bg-primary-50 border border-primary-200">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-primary-600 mb-0 fw-medium">Tổng giao dịch</p>
+                                        <h4 class="text-primary-700 fw-bold">@(transactions?.Count() ?? 0)</h4>
+                                    </div>
+                                    <div class="w-50-px h-50-px bg-primary-600 rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
+                                        <iconify-icon icon="mingcute:transaction-fill" class="icon text-white text-2xl"></iconify-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Form chọn ngày kiểm kê -->
+                <form method="get" class="mb-40 mt-10">
+                    <div class="row align-items-end">
+                        <div class="col-md-4">
+                            <label for="date" class="form-label fw-semibold">Chọn ngày kiểm kê</label>
+                            <input type="date" id="date" name="date" class="form-control" value="@DateTime.ParseExact(stocktakingDate, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-search"></i> Kiểm kê
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                
+
+                <!-- Danh sách giao dịch -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr class="bg-primary-100 text-primary-700">
+                                <th>Thời gian</th>
+                                <th>Tên mặt hàng</th>
+                                <th>Loại giao dịch</th>
+                                <th>Số lượng</th>
+                                <th>Đơn vị</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (transactions != null && transactions.Any())
+                            {
+                                @foreach (var transaction in transactions)
+                                {
+                                    var isImport = transaction.TransactionType == StockTransactionType.PurchaseIn;
+                                    var badgeClass = isImport ? "bg-success" : "bg-danger";
+                                    var typeText = isImport ? "Nhập kho" : "Xuất kho";
+                                    <tr>
+                                        <td>@transaction.CreatedAt.ToString("HH:mm:ss")</td>
+                                        <td>
+                                            <strong>@transaction.Item?.Name</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge @badgeClass text-white">@typeText</span>
+                                        </td>
+                                        <td class="fw-semibold">
+                                            @if (isImport)
+                                            {
+                                                <span class="text-success-600">+@transaction.Quantity</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-warning-600">-@Math.Abs(transaction.Quantity)</span>
+                                            }
+                                        </td>
+                                        <td>@transaction.Item?.Unit</td>
+                                        <td>
+                                            @(string.IsNullOrEmpty(transaction.Note) ? "-" : transaction.Note)
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                                        <br />
+                                        Không có giao dịch nào trong ngày này
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Phân trang -->
+                @if (total > 1)
+                {
+                    <div class="d-flex justify-content-center mt-3">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                @if (page > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Stocktaking", new { date = DateTime.ParseExact(stocktakingDate, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture).ToString("yyyy-MM-dd"), page = page - 1 })">Trước</a>
+                                    </li>
+                                }
+
+                                @for (int i = Math.Max(1, page - 2); i <= Math.Min(total, page + 2); i++)
+                                {
+                                    <li class="page-item @(i == page ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Stocktaking", new { date = DateTime.ParseExact(stocktakingDate, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture).ToString("yyyy-MM-dd"), page = i })">@i</a>
+                                    </li>
+                                }
+
+                                @if (page < total)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Stocktaking", new { date = DateTime.ParseExact(stocktakingDate, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture).ToString("yyyy-MM-dd"), page = page + 1 })">Sau</a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

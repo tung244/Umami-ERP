@@ -1,0 +1,177 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var importTransactions = ViewBag.ImportTransactions as List<StockTransaction>;
+    var exportTransactions = ViewBag.ExportTransactions as List<StockTransaction>;
+    var reportDate = (DateTime)ViewBag.ReportDate;
+    var totalImport = (decimal)ViewBag.TotalImport;
+    var totalExport = (decimal)ViewBag.TotalExport;
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">@ViewBag.Title</h4>
+                <div class="card-tools">
+                    <a href="@Url.Action("Index", "Inventory")" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Form chọn ngày -->
+                <form method="get" class="mb-4">
+                    <div class="row align-items-end">
+                        <div class="col-md-4">
+                            <label for="date" class="form-label fw-semibold">Chọn ngày</label>
+                            <input type="date" id="date" name="date" class="form-control" value="@reportDate.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-search"></i> Xem
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Thống kê tổng quát -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-success-50 border border-success-200">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-success-600 mb-0 fw-medium">Tổng nhập hôm nay</p>
+                                        <h4 class="text-success-700 fw-bold" style="font-size: 1.8em;">@string.Format("{0:N2}", totalImport)</h4>
+                                    </div>
+                                    <div class="w-50-px h-50-px bg-success-600 rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
+                                        <iconify-icon icon="mingcute:arrow-down-fill" class="icon text-white text-2xl"></iconify-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card bg-danger-50 border border-danger-200">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="text-danger-600 mb-0 fw-medium">Tổng xuất hôm nay</p>
+                                        <h4 class="text-danger-700 fw-bold" style="font-size: 1.8em;">@string.Format("{0:N2}", totalExport)</h4>
+                                    </div>
+                                    <div class="w-50-px h-50-px bg-danger-600 rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
+                                        <iconify-icon icon="mingcute:arrow-up-fill" class="icon text-white text-2xl"></iconify-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bảng giao dịch nhập kho -->
+                <div class="mb-5">
+                    <h5 class="mb-3 fw-bold text-success-700">
+                        <i class="fas fa-arrow-down me-2"></i> Nhập kho
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr class="bg-success-100 text-success-700">
+                                    <th>Thời gian</th>
+                                    <th>Tên mặt hàng</th>
+                                    <th>Số lượng</th>
+                                    <th>Đơn vị</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (importTransactions != null && importTransactions.Any())
+                                {
+                                    @foreach (var transaction in importTransactions)
+                                    {
+                                        <tr>
+                                            <td>@transaction.CreatedAt.ToString("HH:mm:ss")</td>
+                                            <td>
+                                                <strong>@transaction.Item?.Name</strong>
+                                            </td>
+                                            <td class="fw-semibold">
+                                                <span class="text-success-600">+@transaction.Quantity</span>
+                                            </td>
+                                            <td>@transaction.Item?.Unit</td>
+                                            <td>
+                                                @(string.IsNullOrEmpty(transaction.Note) ? "-" : transaction.Note)
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <br />
+                                            Không có giao dịch nhập kho trong ngày này
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bảng giao dịch xuất kho -->
+                <div>
+                    <h5 class="mb-3 fw-bold text-danger-700">
+                        <i class="fas fa-arrow-up me-2"></i> Xuất kho
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr class="bg-danger-100 text-danger-700">
+                                    <th>Thời gian</th>
+                                    <th>Tên mặt hàng</th>
+                                    <th>Số lượng</th>
+                                    <th>Đơn vị</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (exportTransactions != null && exportTransactions.Any())
+                                {
+                                    @foreach (var transaction in exportTransactions)
+                                    {
+                                        <tr>
+                                            <td>@transaction.CreatedAt.ToString("HH:mm:ss")</td>
+                                            <td>
+                                                <strong>@transaction.Item?.Name</strong>
+                                            </td>
+                                            <td class="fw-semibold">
+                                                <span class="text-danger-600">-@Math.Abs(transaction.Quantity)</span>
+                                            </td>
+                                            <td>@transaction.Item?.Unit</td>
+                                            <td>
+                                                @(string.IsNullOrEmpty(transaction.Note) ? "-" : transaction.Note)
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <br />
+                                            Không có giao dịch xuất kho trong ngày này
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

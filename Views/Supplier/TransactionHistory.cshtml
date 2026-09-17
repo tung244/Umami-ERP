@@ -1,0 +1,257 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var supplier = ViewBag.Supplier as Supplier;
+    var purchaseOrders = ViewBag.PurchaseOrders as List<PurchaseOrder>;
+    var supplierInvoices = ViewBag.SupplierInvoices as List<SupplierInvoice>;
+    var stockTransactions = ViewBag.StockTransactions as List<StockTransaction>;
+    int poPage = (int)ViewBag.POCurrentPage;
+    int poTotalPages = (int)ViewBag.POTotalPages;
+    int invoicePage = (int)ViewBag.InvoiceCurrentPage;
+    int invoiceTotalPages = (int)ViewBag.InvoiceTotalPages;
+    int stockPage = (int)ViewBag.StockCurrentPage;
+    int stockTotalPages = (int)ViewBag.StockTotalPages;
+}
+
+<h3>@ViewBag.Title</h3>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Thông tin nhà cung cấp</h5>
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Tên:</dt>
+            <dd class="col-sm-9">@supplier?.Name</dd>
+            <dt class="col-sm-3">Liên hệ:</dt>
+            <dd class="col-sm-9">@supplier?.PrimaryContactName</dd>
+            <dt class="col-sm-3">Điện thoại:</dt>
+            <dd class="col-sm-9">@supplier?.Phone</dd>
+            <dt class="col-sm-3">Email:</dt>
+            <dd class="col-sm-9">@supplier?.Email</dd>
+        </dl>
+        <a href="@Url.Action("Details", new { id = supplier?.SupplierId })" class="btn btn-sm btn-info">Xem chi tiết</a>
+        <a href="@Url.Action("Index")" class="btn btn-sm btn-secondary">Quay lại danh sách</a>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-tabs mb-3" id="transactionTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stockTransactions" type="button" role="tab">
+            Giao dịch kho (@(stockTransactions?.Count ?? 0))
+        </button>
+    </li>
+</ul>
+
+<!-- Tabs Content -->
+<div class="tab-content" id="transactionTabsContent">
+    <!-- Purchase Orders Tab -->
+    <div class="tab-pane fade show active" id="purchaseOrders" role="tabpanel">
+    
+    </div>
+
+    <!-- Supplier Invoices Tab -->
+    <div class="tab-pane fade" id="supplierInvoices" role="tabpanel">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Hóa đơn nhà cung cấp</h5>
+                @if (supplierInvoices != null && supplierInvoices.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Số hóa đơn</th>
+                                    <th>Ngày hóa đơn</th>
+                                    <th>Hạn thanh toán</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Còn nợ</th>
+                                    <th>Trạng thái</th>
+                                    <th>Đơn đặt hàng liên kết</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var invoice in supplierInvoices)
+                                {
+                                    <tr>
+                                        <td><strong>@invoice.InvoiceNumber</strong></td>
+                                        <td>@invoice.InvoiceDate.ToString("dd/MM/yyyy")</td>
+                                        <td>@invoice.DueDate.ToString("dd/MM/yyyy")</td>
+                                        <td>@invoice.TotalAmount.ToString("N0")</td>
+                                        <td>
+                                            <span class="@(invoice.BalanceDue > 0 ? "text-danger" : "text-success")">
+                                                @invoice.BalanceDue.ToString("N0")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @switch (invoice.Status)
+                                            {
+                                                case "Open":
+                                                    <span class="badge bg-info">Mở</span>
+                                                    break;
+                                                case "PartiallyPaid":
+                                                    <span class="badge bg-warning">Thanh toán một phần</span>
+                                                    break;
+                                                case "Paid":
+                                                    <span class="badge bg-success">Đã thanh toán</span>
+                                                    break;
+                                                case "Overdue":
+                                                    <span class="badge bg-danger">Quá hạn</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary">@invoice.Status</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (invoice.LinkedPurchaseOrder != null)
+                                            {
+                                                <span class="badge bg-primary">@invoice.LinkedPurchaseOrder.PONumber</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (invoiceTotalPages > 1)
+                    {
+                        <nav aria-label="Phân trang hóa đơn">
+                            <ul class="pagination">
+                                @if (invoicePage > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("TransactionHistory", new { id = supplier?.SupplierId, poPage = poPage, invoicePage = invoicePage - 1 })">Trước</a>
+                                    </li>
+                                }
+                                @for (int i = Math.Max(1, invoicePage - 2); i <= Math.Min(invoiceTotalPages, invoicePage + 2); i++)
+                                {
+                                    <li class="page-item @(i == invoicePage ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("TransactionHistory", new { id = supplier?.SupplierId, poPage = poPage, invoicePage = i })">@i</a>
+                                    </li>
+                                }
+                                @if (invoicePage < invoiceTotalPages)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("TransactionHistory", new { id = supplier?.SupplierId, poPage = poPage, invoicePage = invoicePage + 1 })">Sau</a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">Chưa có hóa đơn nào.</p>
+                }
+            </div>
+        </div>
+    </div>
+     <!-- Stock Transactions Tab -->
+    <div class="tab-pane fade" id="stockTransactions" role="tabpanel">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Giao dịch nhập/xuất kho</h5>
+                @if (stockTransactions != null && stockTransactions.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Ngày</th>
+                                    <th>Loại giao dịch</th>
+                                    <th>Tên sản phẩm</th>
+                                    <th>Số lượng</th>
+                                    <th>Đơn giá</th>
+                                    <th>Thành tiền</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var trans in stockTransactions)
+                                {
+                                    <tr>
+                                        <td>@trans.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>
+                                            @switch (trans.TransactionType)
+                                            {
+                                                case StockTransactionType.PurchaseIn:
+                                                    <span class="badge bg-success text-white">Nhập mua</span>
+                                                    break;
+                                                case StockTransactionType.SaleOut:
+                                                    <span class="badge bg-danger text-white">Xuất bán</span>
+                                                    break;
+                                                case StockTransactionType.AdjustmentIn:
+                                                    <span class="badge bg-info text-white">Điều chỉnh tăng</span>
+                                                    break;
+                                                case StockTransactionType.AdjustmentOut:
+                                                    <span class="badge bg-secondary text-white">Điều chỉnh giảm</span>
+                                                    break;
+                                                case StockTransactionType.TransferIn:
+                                                    <span class="badge bg-primary text-white">Chuyển đến</span>
+                                                    break;
+                                                case StockTransactionType.TransferOut:
+                                                    <span class="badge bg-dark text-white">Chuyển đi</span>
+                                                    break;
+                                                case StockTransactionType.Waste:
+                                                    <span class="badge bg-danger text-white">Hao hụt</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary text-white">@trans.TransactionType</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            <a href="@Url.Action("Details", "Inventory", new { id = trans.Item?.ItemId })" title="Xem chi tiết sản phẩm">
+                                                @trans.Item?.Name
+                                            </a>
+                                        </td>
+                                        <td>@trans.Quantity @trans.Item?.Unit</td>
+                                        <td>@string.Format("{0:N0}", trans.UnitCost ?? 0) VND</td>
+                                        <td>@string.Format("{0:N0}", trans.TotalCost ?? 0) VND</td>
+                                        <td>@(string.IsNullOrEmpty(trans.Note) ? "-" : trans.Note)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (stockTotalPages > 1)
+                    {
+                        <nav aria-label="Phân trang giao dịch kho">
+                            <ul class="pagination">
+                                @if (stockPage > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("TransactionHistory", new { id = supplier?.SupplierId, poPage = poPage, invoicePage = invoicePage, stockPage = stockPage - 1 })">Trước</a>
+                                    </li>
+                                }
+                                @for (int i = Math.Max(1, stockPage - 2); i <= Math.Min(stockTotalPages, stockPage + 2); i++)
+                                {
+                                    <li class="page-item @(i == stockPage ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("TransactionHistory", new { id = supplier?.SupplierId, poPage = poPage, invoicePage = invoicePage, stockPage = i })">@i</a>
+                                    </li>
+                                }
+                                @if (stockPage < stockTotalPages)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("TransactionHistory", new { id = supplier?.SupplierId, poPage = poPage, invoicePage = invoicePage, stockPage = stockPage + 1 })">Sau</a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">Chưa có giao dịch kho nào.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+

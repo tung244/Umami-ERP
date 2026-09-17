@@ -1,0 +1,247 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var customer = ViewBag.Customer as Customer;
+    var tierConfigs = ViewBag.TierConfigs as Dictionary<LoyaltyTier, dynamic>;
+    ViewBag.Title = customer != null ? $"Chi tiết - {customer.FullName}" : "Chi tiết khách hàng";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+            <div class="row">
+                <h4 class="card-title col-md-6">@ViewBag.Title</h4>
+                <div class="card-tools col-md-6 ms-lg-1">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+            </div>
+
+            <div class="card-body">
+                <div class="row">
+                    <!-- Thông tin cơ bản -->
+                    <div class="col-md-6">
+                        <div class="card card-primary card-outline">
+                            <div class="card-header">
+                                <h5 class="card-title"><i class="fas fa-user"></i> Thông tin cơ bản</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th style="width: 120px;">Họ tên:</th>
+                                        <td><strong>@(customer?.FullName ?? "N/A")</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Email:</th>
+                                        <td>@(string.IsNullOrEmpty(customer?.Email) ? "Chưa cập nhật" : customer.Email)</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Số điện thoại:</th>
+                                        <td>@(string.IsNullOrEmpty(customer?.PhoneNumber) ? "Chưa cập nhật" : customer.PhoneNumber)</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Ngày sinh:</th>
+                                        <td>@(customer?.DateOfBirth.HasValue == true ? customer.DateOfBirth.Value.ToString("dd/MM/yyyy") : "Chưa cập nhật")</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Địa chỉ:</th>
+                                        <td>@(string.IsNullOrEmpty(customer?.Address) ? "Chưa cập nhật" : customer.Address)</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Chi nhánh ưa thích:</th>
+                                        <td>@(customer?.PreferredBranch?.Name ?? "Chưa chọn")</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Trạng thái:</th>
+                                        <td>
+                                            @if (customer?.IsActive == true)
+                                            {
+                                                <span class="badge badge-success">Hoạt động</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-secondary">Ngừng hoạt động</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Ngày tạo:</th>
+                                        <td>@(customer?.CreatedAt.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thông tin loyalty -->
+                    <div class="col-md-6">
+                        <div class="card card-success card-outline">
+                            <div class="card-header">
+                                <h5 class="card-title"><i class="fas fa-star"></i> Chương trình thân thiết</h5>
+                            </div>
+                            <div class="card-body">
+                                @if (customer?.LoyaltyAccounts != null && customer.LoyaltyAccounts.Any())
+                                {
+                                    var loyaltyAccount = customer.LoyaltyAccounts.First();
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <th style="width: 120px;">Hạng thành viên:</th>
+                                            <td>
+                                                @{
+                                                    var tier = loyaltyAccount.Tier;
+                                                    var tierLabel = "N/A";
+                                                    var tierColor = "primary";
+                                                    
+                                                    if (tierConfigs != null && tierConfigs.ContainsKey(tier))
+                                                    {
+                                                        tierLabel = tierConfigs[tier].TierName;
+                                                        tierColor = tierConfigs[tier].Color ?? "primary";
+                                                    }
+                                                    else if (tier != LoyaltyTier.None)
+                                                    {
+                                                        tierLabel = tier.ToString();
+                                                    }
+                                                }
+                                                <span style="color: black; font-size: 14px;" class="badge badge-@tierColor">@tierLabel</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Điểm hiện tại:</th>
+                                            <td><strong>@loyaltyAccount.PointsBalance.ToString("N0") điểm</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Tổng điểm tích lũy:</th>
+                                            <td>@loyaltyAccount.TotalEarnedPoints.ToString("N0") điểm</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Điểm đã sử dụng:</th>
+                                            <td>@loyaltyAccount.TotalRedeemedPoints.ToString("N0") điểm</td>
+                                        </tr>
+                                    </table>
+                                }
+                                else
+                                {
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-star-half-alt fa-2x mb-2"></i>
+                                        <p>Chưa tham gia chương trình thân thiết</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lịch sử giao dịch gần đây -->
+                @if (customer?.Orders != null && customer.Orders.Any())
+                {
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card card-info card-outline">
+                                <div class="card-header">
+                                    <h5 class="card-title"><i class="fas fa-history"></i> Lịch sử đơn hàng gần đây</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Mã đơn</th>
+                                                    <th>Ngày đặt</th>
+                                                    <th>Tổng tiền</th>
+                                                    <th>Trạng thái</th>
+                                                    <th>Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var order in customer.Orders)
+                                                {
+                                                    <tr>
+                                                        <td><strong>@order.OrderNumber</strong></td>
+                                                        <td>@order.PlacedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                        <td><strong>@order.TotalAmount.ToString("N0") VND</strong></td>
+                                                        <td>
+                                                            <span style="color: black;" class="badge badge-info">@order.Status.ToString()</span>
+                                                        </td>
+                                                        <td>
+                                                            <a href="@Url.Action("Details", "Order", new { id = order.OrderId })" class="btn btn-sm btn-info" title="Xem chi tiết">
+                                                                <i class="fas fa-eye"></i> Chi tiết
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Lịch sử điểm thưởng -->
+                @if (customer?.LoyaltyAccounts != null && customer.LoyaltyAccounts.Any())
+                {
+                    var loyaltyAccount = customer.LoyaltyAccounts.First();
+                    if (loyaltyAccount?.Transactions != null && loyaltyAccount.Transactions.Any())
+                    {
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card card-warning card-outline">
+                                    <div class="card-header">
+                                        <h5 class="card-title"><i class="fas fa-coins"></i> Lịch sử điểm thưởng gần đây</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Ngày</th>
+                                                        <th>Loại</th>
+                                                        <th>Điểm</th>
+                                                        <th>Lý do</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var transaction in loyaltyAccount.Transactions)
+                                                    {
+                                                        <tr>
+                                                            <td>@transaction.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                            <td>
+                                                                @if (transaction.Type == LoyaltyTransactionType.Earn)
+                                                                {
+                                                                    <span style="color: green;" class="badge badge-success">Tích điểm</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span style="color: red;" class="badge badge-warning">Sử dụng</span>
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                @if (transaction.Type == LoyaltyTransactionType.Earn)
+                                                                {
+                                                                    <span style="color: green;" class="text-success">+@transaction.Points.ToString("N0")</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span style="color: red;" class="text-danger">-@transaction.Points.ToString("N0")</span>
+                                                                }
+                                                            </td>
+                                                            <td>@(string.IsNullOrEmpty(transaction.Reason) ? "-" : transaction.Reason)</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,171 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@model Voucher
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Chi tiết voucher</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="/">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">Voucher</a></li>
+                        <li class="breadcrumb-item active">Chi tiết</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Thông tin voucher: @Model.Description</h3>
+                            <div class="card-tools">
+                                <a href="@Url.Action("Edit", new { id = Model.VoucherId })" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-edit"></i> Chỉnh sửa
+                                </a>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-list"></i> Danh sách
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Mã voucher:</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="badge badge-primary badge-lg">@Model.Code</span>
+                                        </dd>
+
+                                        <dt class="col-sm-4">Mô tả voucher:</dt>
+                                        <dd class="col-sm-8">@Model.Description</dd>
+
+                                        <dt class="col-sm-4">Loại giảm giá:</dt>
+                                        <dd class="col-sm-8">
+                                            @switch (Model.DiscountType)
+                                            {
+                                                case VoucherDiscountType.Percentage:
+                                                    <span class="badge badge-info">Phần trăm</span>
+                                                    break;
+                                                case VoucherDiscountType.FixedAmount:
+                                                    <span class="badge badge-success">Số tiền cố định</span>
+                                                    break;
+                                                case VoucherDiscountType.FreeItem:
+                                                    <span class="badge badge-warning">Miễn phí món</span>
+                                                    break;
+                                            }
+                                        </dd>
+
+                                        <dt class="col-sm-4">Giá trị giảm giá:</dt>
+                                        <dd class="col-sm-8">
+                                            @if (Model.DiscountType == VoucherDiscountType.Percentage)
+                                            {
+                                                <strong>@Model.DiscountValue%</strong>
+                                            }
+                                            else if (Model.DiscountType == VoucherDiscountType.FixedAmount)
+                                            {
+                                                <strong>@($"{Model.DiscountValue:N0} VND")</strong>
+                                            }
+                                            else
+                                            {
+                                                <strong>@Model.DiscountValue món</strong>
+                                            }
+                                        </dd>
+
+                                        <dt class="col-sm-4">Giới hạn sử dụng tổng:</dt>
+                                        <dd class="col-sm-8">@Model.TotalUsageLimit lần</dd>
+
+                                        <dt class="col-sm-4">Giới hạn mỗi khách:</dt>
+                                        <dd class="col-sm-8">@Model.UsageLimitPerCustomer lần</dd>
+                                    </dl>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Thời gian hiệu lực:</dt>
+                                        <dd class="col-sm-8">
+                                            Từ @Model.ValidFrom.ToString("dd/MM/yyyy HH:mm")<br>
+                                            Đến @Model.ValidTo.ToString("dd/MM/yyyy HH:mm")
+                                            @if (Model.ValidTo < DateTime.Now)
+                                            {
+                                                <span class="badge badge-danger">Đã hết hạn</span>
+                                            }
+                                            else if (Model.ValidTo < DateTime.Now.AddDays(7))
+                                            {
+                                                <span class="badge badge-warning">Sắp hết hạn</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-success">Còn hiệu lực</span>
+                                            }
+                                        </dd>
+                                        </dd>
+
+                                        <dt class="col-sm-4">Đơn hàng tối thiểu:</dt>
+                                        <dd class="col-sm-8">
+                                            @if (Model.MinimumOrderAmount.HasValue)
+                                            {
+                                                @($"{Model.MinimumOrderAmount.Value:N0} VND")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Không yêu cầu</span>
+                                            }
+                                        </dd>
+
+                                        <dt class="col-sm-4">Trạng thái:</dt>
+                                        <dd class="col-sm-8">
+                                            @if (Model.IsActive && Model.ValidTo > DateTime.Now)
+                                            {
+                                                <span class="badge badge-success">Hoạt động</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-danger">Không hoạt động</span>
+                                            }
+                                        </dd>
+
+                                        <dt class="col-sm-4">Ngày tạo:</dt>
+                                        <dd class="col-sm-8">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                                        <dt class="col-sm-4">Cập nhật cuối:</dt>
+                                        <dd class="col-sm-8">@Model.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")</dd>
+                                    </dl>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h5>Mô tả</h5>
+                                        <p>@Model.Description</p>
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <h5>Thông tin giới hạn</h5>
+                                    <div class="alert alert-info">
+                                        <strong>Giới hạn tổng:</strong> @Model.TotalUsageLimit lần<br>
+                                        <strong>Giới hạn mỗi khách:</strong> @Model.UsageLimitPerCustomer lần
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

@@ -1,0 +1,93 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var staffList = ViewBag.StaffList as List<Staff>;
+    var month = ViewBag.Month as int?;
+    var year = ViewBag.Year as int?;
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Tạo bảng lương hàng loạt</h5>
+                <p class="card-subtitle mb-0">Tạo bảng lương cho nhiều nhân viên cùng kỳ</p>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label for="month" class="form-label">Tháng</label>
+                            <select class="form-select" id="month" name="month" required>
+                                @for (int i = 1; i <= 12; i++)
+                                {
+                                    <option value="@i" selected="@(month == i)">@i</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="year" class="form-label">Năm</label>
+                            <select class="form-select" id="year" name="year" required>
+                                @for (int i = DateTime.Now.Year - 1; i <= DateTime.Now.Year + 1; i++)
+                                {
+                                    <option value="@i" selected="@(year == i)">@i</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6>Chọn nhân viên cần tạo bảng lương</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <input type="checkbox" id="selectAll" class="form-check-input">
+                                            <label class="form-check-label ms-2" for="selectAll">Tất cả</label>
+                                        </th>
+                                        <th>Mã NV</th>
+                                        <th>Họ tên</th>
+                                        <th>Chức vụ</th>
+                                        <th>Lương cơ bản</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (staffList != null)
+                                    {
+                                        foreach (var staff in staffList)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <input type="checkbox" class="form-check-input staff-checkbox"
+                                                           name="selectedStaffIds" value="@staff.StaffId" id="staff_@staff.StaffId">
+                                                </td>
+                                                <td>@staff.EmployeeNumber</td>
+                                                <td>@staff.FirstName @staff.LastName</td>
+                                                <td>@staff.Role?.Name</td>
+                                                <td>@staff.BaseSalary?.ToString("N0") VNĐ</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+                        <button type="submit" class="btn btn-primary">Tạo bảng lương</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.staff-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+</script>

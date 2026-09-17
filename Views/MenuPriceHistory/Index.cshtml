@@ -1,0 +1,211 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var items = ViewBag.Items as List<MenuPriceHistory>;
+    var dishes = ViewBag.Dishes as dynamic;
+    int page = (int)ViewBag.CurrentPage;
+    int total = (int)ViewBag.TotalPages;
+    string? search = ViewBag.SearchTerm;
+    Guid? dishFilter = ViewBag.DishFilter;
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="ri-price-tag-3-line me-2"></i>@ViewBag.Title</h5>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="ri-add-line me-1"></i>Cập nhật giá món ăn
+        </a>
+    </div>
+    
+    <div class="card-body">
+        <!-- Filters -->
+        <form method="get" class="row mb-4 g-3">
+            <div class="col-md-4">
+                <label class="form-label">Tìm kiếm món ăn</label>
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Nhập tên hoặc mã món..." value="@search" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Lọc theo món</label>
+                <select name="dishFilter" class="form-select">
+                    <option value="">-- Tất cả món ăn --</option>
+                    @if (dishes != null)
+                    {
+                        foreach (var dish in dishes)
+                        {
+                            <option value="@dish.DishId" selected="@(dishFilter == dish.DishId)">
+                                @(dish.Sku ?? "N/A") - @dish.Name
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="ri-search-line me-1"></i>Tìm kiếm
+                </button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="ri-refresh-line me-1"></i>Reset
+                </a>
+            </div>
+        </form>
+
+        <!-- Table -->
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Món ăn</th>
+                        <th>Giá cũ → Giá mới</th>
+                        <th>Hiệu lực từ</th>
+                        <th>Hiệu lực đến</th>
+                        <th>Người thay đổi</th>
+                        <th>Lý do</th>
+                        <th style="width: 150px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (items != null && items.Any())
+                    {
+                        @foreach (var item in items)
+                        {
+                            var isActive = item.EffectiveTo == null;
+                            <tr class="@(isActive ? "table-success" : "")">
+                                <td>
+                                    <strong>@item.Dish?.Name</strong>
+                                    <br /><small class="text-muted">@(item.Dish?.Sku ?? "N/A")</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">@item.Price.ToString("N0") VND</span>
+                                    @if (isActive)
+                                    {
+                                        <span class="badge bg-success ms-1">Hiện tại</span>
+                                    }
+                                </td>
+                                <td>@item.EffectiveFrom.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @if (item.EffectiveTo.HasValue)
+                                    {
+                                        @item.EffectiveTo.Value.ToString("dd/MM/yyyy HH:mm")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-success fw-bold">Đang áp dụng</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.ChangedByStaff != null)
+                                    {
+                                        @($"{item.ChangedByStaff.FirstName} {item.ChangedByStaff.LastName}")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Reason))
+                                    {
+                                        <span title="@item.Reason">
+                                            @(item.Reason.Length > 30 ? item.Reason.Substring(0, 30) + "..." : item.Reason)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">--</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="@Url.Action("Details", new { id = item.MenuPriceId })" 
+                                           class="btn btn-info" title="Chi tiết">
+                                            <i class="ri-eye-line"></i>
+                                        </a>
+                                        <a href="@Url.Action("Edit", new { id = item.MenuPriceId })" 
+                                           class="btn btn-warning" title="Sửa">
+                                            <i class="ri-edit-line"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-danger" 
+                                                onclick="confirmDelete('@item.MenuPriceId', '@item.Dish?.Name', '@item.Price.ToString("N0")')"
+                                                title="Xóa">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="ri-inbox-line" style="font-size: 48px; color: #ccc;"></i>
+                                <p class="text-muted mt-2">Không có dữ liệu lịch sử giá</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (total > 1)
+        {
+            <nav aria-label="Phân trang" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(page == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { search, dishFilter, page = page - 1 })">
+                            <i class="ri-arrow-left-s-line"></i>
+                        </a>
+                    </li>
+                    @for (int i = Math.Max(1, page - 2); i <= Math.Min(total, page + 2); i++)
+                    {
+                        <li class="page-item @(i == page ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { search, dishFilter, page = i })">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(page == total ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { search, dishFilter, page = page + 1 })">
+                            <i class="ri-arrow-right-s-line"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc muốn xóa lịch sử giá này?</p>
+                <p><strong>Món:</strong> <span id="deleteDishName"></span></p>
+                <p><strong>Giá:</strong> <span id="deletePrice"></span> VND</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(id, dishName, price) {
+            $('#deleteDishName').text(dishName);
+            $('#deletePrice').text(price);
+            $('#deleteForm').attr('action', '@Url.Action("Delete")' + '?id=' + id);
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+    </script>
+}

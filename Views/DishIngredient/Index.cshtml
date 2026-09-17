@@ -1,0 +1,97 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var dish = ViewBag.Dish as Dish;
+    var items = ViewBag.Items as List<DishIngredient>;
+    int page = (int)ViewBag.CurrentPage;
+    int total = (int)ViewBag.TotalPages;
+}
+
+@if (dish != null)
+{
+    <div class="mb-3">
+        <a href="@Url.Action("Create", new { dishId = dish.DishId })" class="btn btn-primary">Thêm nguyên liệu</a>
+        <a href="@Url.Action("Index", "Dish")" class="btn btn-secondary">Quay lại danh sách món</a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Thông tin món ăn</h5>
+            <p class="card-text">
+                <strong>Tên:</strong> @dish.Name<br />
+                <strong>Danh mục:</strong> @dish.Category?.Name<br />
+                <strong>Giá:</strong> @dish.DefaultServingPrice.ToString("N0") VND
+            </p>
+        </div>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nguyên liệu</th>
+                <th>Số lượng/portion</th>
+                <th>Đơn vị</th>
+                <th>Bắt buộc</th>
+                <th>Ngày tạo</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (items != null && items.Any())
+            {
+                @foreach (var item in items)
+                {
+                    <tr>
+                        <td>@item.InventoryItem?.Name</td>
+                        <td>@item.QuantityPerPortion</td>
+                        <td>@item.InventoryItem?.Unit</td>
+                        <td>@(item.IsOptional ? "Không" : "Có")</td>
+                        <td>@item.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <a href="@Url.Action("Edit", new { id = item.DishIngredientId })" class="btn btn-sm btn-warning">Sửa</a>
+                            <form method="post" action="@Url.Action("Delete", new { id = item.DishIngredientId })" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn xóa?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center">Chưa có nguyên liệu nào</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (total > 1)
+    {
+        <nav aria-label="Phân trang">
+            <ul class="pagination">
+                @if (page > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { dishId = dish.DishId, page = page - 1 })">Trước</a>
+                    </li>
+                }
+                @for (int i = Math.Max(1, page - 2); i <= Math.Min(total, page + 2); i++)
+                {
+                    <li class="page-item @(i == page ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { dishId = dish.DishId, page = i })">@i</a>
+                    </li>
+                }
+                @if (page < total)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { dishId = dish.DishId, page = page + 1 })">Sau</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <h1>Không tìm thấy món ăn</h1>
+}

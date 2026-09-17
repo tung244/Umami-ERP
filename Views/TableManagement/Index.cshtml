@@ -1,0 +1,241 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var tables = ViewBag.Tables as List<RestaurantTable>;
+    int page = (int)ViewBag.CurrentPage;
+    int total = (int)ViewBag.TotalPages;
+    string search = (string)ViewBag.SearchTerm;
+    string statusFilter = (string)ViewBag.StatusFilter;
+    var statuses = ViewBag.TableStatuses;
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5>@ViewBag.Title</h5>
+    </div>
+    <div class="card-body">
+        <!-- Filters -->
+        <form method="get" class="row mb-3 gy-2">
+            <div class="col-md-6">
+                <input type="text" name="search" class="form-control" placeholder="Tìm theo tên hoặc mã bàn..." value="@search" />
+            </div>
+            <div class="col-md-3">
+                <select name="statusFilter" class="form-select">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    @foreach (var status in statuses)
+                    {
+                        if (status.Value == statusFilter)
+                        {
+                            <option value="@status.Value" selected>@status.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@status.Value">@status.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
+            </div>
+        </form>
+
+        <!-- Table Grid View -->
+        <div class="row g-3 mt-2">
+            @if (tables != null && tables.Count > 0)
+            {
+                @foreach (var table in tables)
+                {
+                    var statusClass = table.Status switch
+                    {
+                        QuanLiKhoHang.Models.Enums.TableStatus.Available => "bg-success-100 border-success",
+                        QuanLiKhoHang.Models.Enums.TableStatus.Occupied => "bg-danger-100 border-danger",
+                        QuanLiKhoHang.Models.Enums.TableStatus.Reserved => "bg-warning-100 border-warning",
+                        QuanLiKhoHang.Models.Enums.TableStatus.OutOfService => "bg-neutral-100 border-secondary",
+                        _ => "bg-light"
+                    };
+
+                    var statusText = table.Status switch
+                    {
+                        QuanLiKhoHang.Models.Enums.TableStatus.Available => "Trống",
+                        QuanLiKhoHang.Models.Enums.TableStatus.Occupied => "Có khách",
+                        QuanLiKhoHang.Models.Enums.TableStatus.Reserved => "Đã đặt trước",
+                        QuanLiKhoHang.Models.Enums.TableStatus.OutOfService => "Ngừng sử dụng",
+                        _ => "Không xác định"
+                    };
+
+                    <div class="col-md-4 col-lg-3">
+                        <div class="card @statusClass h-100" style="border-width: 2px;" data-table-name="@table.Name" data-table-id="@table.TableId">
+                            <div class="card-body">
+                                <h6 class="card-title">@table.Name</h6>
+                                <p class="text-muted small mb-2">Mã: @table.Code</p>
+                                <p class="text-muted small mb-3">Chỗ ngồi: @table.Seats</p>
+                                <div class="mb-3">
+                                    <span class="badge bg-primary">@statusText</span>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <a href="@Url.Action("Details", "TableManagement", new { tableId = table.TableId })" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        Chi tiết
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="ri-information-line"></i> Không tìm thấy bàn nào
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (total > 1)
+        {
+            <nav class="mt-4" aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    @if (page > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", "TableManagement", new { search, statusFilter, page = 1 })">Đầu tiên</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", "TableManagement", new { search, statusFilter, page = page - 1 })">Trước</a>
+                        </li>
+                    }
+                    @for (int i = Math.Max(1, page - 2); i <= Math.Min(total, page + 2); i++)
+                    {
+                        <li class="page-item @(i == page ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", "TableManagement", new { search, statusFilter, page = i })">@i</a>
+                        </li>
+                    }
+                    @if (page < total)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", "TableManagement", new { search, statusFilter, page = page + 1 })">Sau</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", "TableManagement", new { search, statusFilter, page = total })">Cuối cùng</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function markAsServed(tableId) {
+        if (!confirm('Xác nhận đã phục vụ xong cho bàn này?')) return;
+
+        fetch(`/TableManagement/MarkAsServed`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ tableId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Cập nhật thành công', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Có lỗi xảy ra', 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Lỗi kết nối', 'error');
+        });
+    }
+
+    // SignalR connection để cập nhật trạng thái bàn khi có order mới
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/dishHub")
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on("KitchenTicketAdded", function(data) {
+        console.log("[SignalR] Order mới:", data);
+        
+        // Tìm card bàn và cập nhật trạng thái
+        if (data.tableName) {
+            const tableCard = document.querySelector(`[data-table-name="${data.tableName}"]`);
+            if (tableCard) {
+                // Cập nhật status class
+                tableCard.classList.remove('bg-success-100', 'border-success', 'bg-warning-100', 'border-warning', 'bg-neutral-100', 'border-secondary');
+                tableCard.classList.add('bg-danger-100', 'border-danger');
+                
+                // Cập nhật status text
+                const statusBadge = tableCard.querySelector('.badge');
+                if (statusBadge) {
+                    statusBadge.textContent = 'Có khách';
+                }
+                
+                // Thêm animation
+                tableCard.style.animation = 'pulse 0.5s ease-in-out';
+                setTimeout(() => { tableCard.style.animation = ''; }, 500);
+            }
+        }
+    });
+
+    // Lắng nghe event cập nhật trạng thái bàn (từ OrderController hoặc TableManagement)
+    connection.on("TableStatusChanged", function(data) {
+        console.log("[SignalR] Trạng thái bàn thay đổi:", data);
+        
+        if (data.tableId) {
+            const tableCard = document.querySelector(`[data-table-id="${data.tableId}"]`);
+            if (tableCard) {
+                // Xóa tất cả class trạng thái cũ
+                tableCard.classList.remove('bg-success-100', 'border-success', 
+                                          'bg-danger-100', 'border-danger',
+                                          'bg-warning-100', 'border-warning',
+                                          'bg-neutral-100', 'border-secondary');
+                
+                // Thêm class mới theo status
+                const statusMapping = {
+                    'Available': { class: 'bg-success-100 border-success', text: 'Trống' },
+                    'Occupied': { class: 'bg-danger-100 border-danger', text: 'Có khách' },
+                    'Reserved': { class: 'bg-warning-100 border-warning', text: 'Đã đặt trước' },
+                    'OutOfService': { class: 'bg-neutral-100 border-secondary', text: 'Ngừng sử dụng' }
+                };
+                
+                const statusInfo = statusMapping[data.status] || { class: 'bg-light', text: 'Không xác định' };
+                tableCard.className = `card ${statusInfo.class} h-100`;
+                tableCard.style.borderWidth = '2px';
+                
+                // Cập nhật status badge
+                const statusBadge = tableCard.querySelector('.badge');
+                if (statusBadge) {
+                    statusBadge.textContent = statusInfo.text;
+                }
+                
+                // Thêm animation
+                tableCard.style.animation = 'pulse 0.5s ease-in-out';
+                setTimeout(() => { tableCard.style.animation = ''; }, 500);
+            }
+        }
+    });
+
+    connection.start()
+        .then(() => console.log("[SignalR] Kết nối thành công"))
+        .catch(err => console.error("[SignalR] Lỗi kết nối:", err.toString()));
+
+    // Xử lý reconnect
+    connection.onreconnected(() => console.log("[SignalR] Tái kết nối thành công"));
+    connection.onclose(() => console.log("[SignalR] Kết nối đã đóng"));
+</script>
+}
+
+<style>
+    @@keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+    }
+</style>

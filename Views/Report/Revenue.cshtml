@@ -1,0 +1,625 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    ViewData["title"] = "Doanh thu & Lợi nhuận";
+    ViewData["subTitle"] = "Phân tích doanh thu, lợi nhuận và chi phí";
+    var branches = ViewBag.Branches as List<Branch> ?? new List<Branch>();
+    var categories = ViewBag.Categories as List<Category> ?? new List<Category>();
+}
+
+<!-- Header & Filters -->
+<div class="row">
+    <div class="col-12">
+        <div class="card radius-8 border mb-24">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <h5 class="mb-0 fw-bold">💰 Doanh thu & Lợi nhuận</h5>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <select id="branchFilter" class="form-select form-select-sm w-auto">
+                        <option value="">Tất cả chi nhánh</option>
+                        @foreach (var branch in branches)
+                        {
+                            <option value="@branch.BranchId">@branch.Name</option>
+                        }
+                    </select>
+                    <input type="date" id="startDate" class="form-control form-control-sm w-auto" value="@DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd")">
+                    <span class="text-secondary-light">đến</span>
+                    <input type="date" id="endDate" class="form-control form-control-sm w-auto" value="@DateTime.Today.ToString("yyyy-MM-dd")">
+                    <select id="compareWith" class="form-select form-select-sm w-auto">
+                        <option value="none">Không so sánh</option>
+                        <option value="mom">So với tháng trước</option>
+                        <option value="yoy">So với năm trước</option>
+                    </select>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="refreshReports()">
+                        <iconify-icon icon="mdi:refresh"></iconify-icon> Làm mới
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row mb-24">
+    <div class="col-xxl-6 col-sm-6">
+        <div class="card radius-8 border-0 shadow-sm h-100">
+            <div class="card-body p-24">
+                <div class="d-flex align-items-center justify-content-between mb-16">
+                    <span class="mb-0 fw-medium text-secondary-light text-sm">Tổng doanh thu</span>
+                    <span class="text-success-main text-xl">
+                        <iconify-icon icon="mdi:cash-multiple"></iconify-icon>
+                    </span>
+                </div>
+                <h4 class="mb-0 fw-bold" id="totalRevenue">0 VNĐ</h4>
+                <p class="text-sm text-secondary-light mt-8 mb-0">
+                    <span id="revenueChange" class="fw-semibold">--</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xxl-6 col-sm-6">
+        <div class="card radius-8 border-0 shadow-sm h-100">
+            <div class="card-body p-24">
+                <div class="d-flex align-items-center justify-content-between mb-16">
+                    <span class="mb-0 fw-medium text-secondary-light text-sm">Tổng đơn hàng</span>
+                    <span class="text-info-600 text-xl">
+                        <iconify-icon icon="mdi:cart"></iconify-icon>
+                    </span>
+                </div>
+                <h4 class="mb-0 fw-bold" id="totalOrders">0</h4>
+                <p class="text-sm text-secondary-light mt-8 mb-0">
+                    AOV: <span class="fw-semibold" id="avgOrderValue">0 VNĐ</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- A1. Revenue & Orders Time Series -->
+<div class="row mb-24">
+    <div class="col-xxl-6">
+        <div class="card radius-8 border h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-semibold">📈 Doanh thu theo thời gian</h6>
+                <button class="btn btn-sm btn-outline-primary" onclick="exportReport('revenue')">
+                    <iconify-icon icon="mdi:download"></iconify-icon> Export
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="revenueTimeSeriesChart" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xxl-6">
+        <div class="card radius-8 border h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-semibold">📊 Số đơn theo thời gian</h6>
+            </div>
+            <div class="card-body">
+                <div id="ordersTimeSeriesChart" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- A2: Top Dishes -->
+<div class="row mb-24">
+    <div class="col-12">
+        <div class="card radius-8 border">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-semibold">📊 Top món ăn</h6>
+                <div class="d-flex gap-2">
+                    <select id="dishCategory" class="form-select form-select-sm w-auto" onchange="loadTopDishesChart()">
+                        <option value="">Tất cả danh mục</option>
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.CategoryId">@cat.Name</option>
+                        }
+                    </select>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="sortByRevenue" onclick="toggleSort('revenue')">
+                        Theo doanh thu <iconify-icon icon="mdi:arrow-down" id="revenueIcon"></iconify-icon>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="sortByQuantity" onclick="toggleSort('quantity')">
+                        Theo số lượng <iconify-icon icon="mdi:arrow-down" id="quantityIcon"></iconify-icon>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="topDishesChart" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Analytics Charts -->
+<div class="row mb-24">
+    <!-- Payment Method Analysis -->
+    <div class="col-xxl-6">
+        <div class="card radius-8 border h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-semibold">💳 Phương thức thanh toán</h6>
+            </div>
+            <div class="card-body">
+                <div id="paymentMethodChart" style="min-height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Revenue Mix -->
+    <div class="col-xxl-6">
+        <div class="card radius-8 border h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-semibold">🍽️ Doanh thu theo danh mục</h6>
+                <select id="categoryGroupBy" class="form-select form-select-sm w-auto" onchange="loadCategoryRevenueChart()">
+                    <option value="month">Theo tháng</option>
+                    <option value="week">Theo tuần</option>
+                </select>
+            </div>
+            <div class="card-body">
+                <div id="categoryRevenueChart" style="min-height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
+<script>
+    let charts = {};
+    let sortState = {
+        type: 'revenue', // 'revenue' or 'quantity'
+        order: 'desc'    // 'desc' (tốt -> tệ) or 'asc' (tệ -> tốt)
+    };
+    let reportConnection = null;
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0
+        }).format(amount);
+    }
+
+    function formatNumber(num) {
+        return new Intl.NumberFormat('vi-VN').format(num);
+    }
+
+    function getFilters() {
+        return {
+            startDate: document.getElementById('startDate').value,
+            endDate: document.getElementById('endDate').value,
+            branchId: document.getElementById('branchFilter').value,
+            compareWith: document.getElementById('compareWith').value
+        };
+    }
+
+    async function loadRevenueTimeSeries() {
+        const filters = getFilters();
+        const url = `/Report/RevenueTimeSeries?startDate=${filters.startDate}&endDate=${filters.endDate}&branchId=${filters.branchId}&compareWith=${filters.compareWith}`;
+        
+        try {
+            const response = await fetch(url);
+            const result = await response.json();
+            if (!result.success || !result.data || result.data.length === 0) {
+                console.warn('No data available for revenue chart');
+                return;
+            }
+
+            document.getElementById('totalRevenue').textContent = formatCurrency(result.kpi.totalRevenue || 0);
+            document.getElementById('totalOrders').textContent = formatNumber(result.kpi.totalOrders || 0);
+            document.getElementById('avgOrderValue').textContent = formatCurrency(result.kpi.aov || 0);
+
+            if (result.comparison) {
+                const changeClass = result.comparison.changePercent >= 0 ? 'text-success-main' : 'text-danger-main';
+                const changeIcon = result.comparison.changePercent >= 0 ? '↑' : '↓';
+                document.getElementById('revenueChange').innerHTML = 
+                    `<span class="${changeClass}">${changeIcon} ${Math.abs(result.comparison.changePercent)}%</span> so với ${result.comparison.period === 'MoM' ? 'tháng trước' : 'năm trước'}`;
+            }
+
+            // Revenue Chart
+            const revenueOptions = {
+                series: [{
+                    name: 'Doanh thu',
+                    data: result.data.map(d => d.revenue || 0)
+                }],
+                chart: { height: 400, type: 'area', toolbar: { show: true } },
+                stroke: { width: 2, curve: 'smooth' },
+                fill: {
+                    type: 'gradient',
+                    gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.3 }
+                },
+                colors: ['#0ea5e9'],
+                dataLabels: { enabled: false },
+                xaxis: {
+                    categories: result.data.map(d => d.date || ''),
+                    labels: {
+                        formatter: function(val) {
+                            if (!val) return '';
+                            const date = new Date(val);
+                            return date.getDate() + '/' + (date.getMonth() + 1);
+                        }
+                    }
+                },
+                yaxis: {
+                    title: { text: 'Doanh thu (nghìn VNĐ)' },
+                    labels: { formatter: val => val ? (val / 1000).toFixed(0) + 'k' : '0' }
+                },
+                tooltip: {
+                    y: { formatter: val => formatCurrency(val || 0) }
+                }
+            };
+
+            // Orders Chart
+            const ordersOptions = {
+                series: [{
+                    name: 'Số đơn',
+                    data: result.data.map(d => d.orders || 0)
+                }],
+                chart: { height: 400, type: 'line', toolbar: { show: false } },
+                stroke: { width: 3, curve: 'smooth' },
+                colors: ['#f59e0b'],
+                dataLabels: { enabled: false },
+                markers: {
+                    size: 4,
+                    colors: ['#f59e0b'],
+                    strokeColors: '#fff',
+                    strokeWidth: 2,
+                    hover: { size: 6 }
+                },
+                xaxis: {
+                    categories: result.data.map(d => d.date || ''),
+                    labels: {
+                        formatter: function(val) {
+                            if (!val) return '';
+                            const date = new Date(val);
+                            return date.getDate() + '/' + (date.getMonth() + 1);
+                        }
+                    }
+                },
+                yaxis: {
+                    title: { text: 'Số đơn' },
+                    labels: { formatter: val => val ? Math.round(val) : 0 }
+                },
+                tooltip: {
+                    y: { formatter: val => Math.round(val || 0) + ' đơn' }
+                }
+            };
+
+            if (charts.revenueTimeSeries) charts.revenueTimeSeries.destroy();
+            charts.revenueTimeSeries = new ApexCharts(document.querySelector("#revenueTimeSeriesChart"), revenueOptions);
+            charts.revenueTimeSeries.render();
+
+            if (charts.ordersTimeSeries) charts.ordersTimeSeries.destroy();
+            charts.ordersTimeSeries = new ApexCharts(document.querySelector("#ordersTimeSeriesChart"), ordersOptions);
+            charts.ordersTimeSeries.render();
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    function toggleSort(type) {
+        if (sortState.type === type) {
+            // Đổi chiều sắp xếp
+            sortState.order = sortState.order === 'desc' ? 'asc' : 'desc';
+        } else {
+            // Chuyển sang loại khác, mặc định desc
+            sortState.type = type;
+            sortState.order = 'desc';
+        }
+
+        // Cập nhật UI buttons
+        const revenueBtn = document.getElementById('sortByRevenue');
+        const quantityBtn = document.getElementById('sortByQuantity');
+        const revenueIcon = document.getElementById('revenueIcon');
+        const quantityIcon = document.getElementById('quantityIcon');
+
+        if (type === 'revenue') {
+            revenueBtn.className = 'btn btn-sm btn-primary';
+            quantityBtn.className = 'btn btn-sm btn-outline-secondary';
+            revenueIcon.setAttribute('icon', sortState.order === 'desc' ? 'mdi:arrow-down' : 'mdi:arrow-up');
+            quantityIcon.setAttribute('icon', 'mdi:arrow-down');
+        } else {
+            quantityBtn.className = 'btn btn-sm btn-primary';
+            revenueBtn.className = 'btn btn-sm btn-outline-secondary';
+            quantityIcon.setAttribute('icon', sortState.order === 'desc' ? 'mdi:arrow-down' : 'mdi:arrow-up');
+            revenueIcon.setAttribute('icon', 'mdi:arrow-down');
+        }
+
+        loadTopDishesChart();
+    }
+
+    async function loadTopDishesChart() {
+        const filters = getFilters();
+        const branchId = document.getElementById('branchFilter').value;
+        const categoryId = document.getElementById('dishCategory').value;
+        const url = `/Report/TopDishesAnalysis?startDate=${filters.startDate}&endDate=${filters.endDate}&branchId=${branchId}&categoryId=${categoryId}&sortBy=${sortState.type}&limit=10`;
+        
+        try {
+            const response = await fetch(url);
+            const result = await response.json();
+            if (!result.success) return;
+
+            // Sắp xếp dữ liệu theo order
+            let data = result.data;
+            if (sortState.order === 'asc') {
+                data = data.reverse();
+            }
+
+            const seriesData = sortState.type === 'revenue' 
+                ? data.map(d => d.revenue)
+                : data.map(d => d.quantitySold);
+
+            const options = {
+                series: [{
+                    name: sortState.type === 'revenue' ? 'Doanh thu' : 'Số lượng',
+                    data: seriesData
+                }],
+                chart: { type: 'bar', height: 400, toolbar: { show: false } },
+                plotOptions: {
+                    bar: { horizontal: true, dataLabels: { position: 'top' } }
+                },
+                dataLabels: {
+                    enabled: true,
+                    formatter: val => sortState.type === 'revenue' 
+                        ? (val / 1000).toFixed(0) + 'k'
+                        : Math.round(val),
+                    offsetX: -10,
+                    style: { fontSize: '10px', colors: ['#fff'] }
+                },
+                colors: ['#0ea5e9'],
+                xaxis: {
+                    categories: data.map(d => d.dishName),
+                    labels: { 
+                        formatter: val => sortState.type === 'revenue'
+                            ? (val / 1000).toFixed(0) + 'k'
+                            : Math.round(val)
+                    }
+                },
+                tooltip: {
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        const dish = data[dataPointIndex];
+                        const mainValue = sortState.type === 'revenue' 
+                            ? formatCurrency(dish.revenue)
+                            : Math.round(dish.quantitySold) + ' món';
+                        const extraValue = sortState.type === 'revenue'
+                            ? Math.round(dish.quantitySold) + ' món'
+                            : formatCurrency(dish.revenue);
+                        const mainLabel = sortState.type === 'revenue' ? 'Doanh thu' : 'Số lượng';
+                        const extraLabel = sortState.type === 'revenue' ? 'Số lượng' : 'Doanh thu';
+
+                        return '<div class="apexcharts-tooltip-custom" style="padding: 10px; background: #fff; border: 1px solid #e3e3e3; border-radius: 4px;">' +
+                            '<div style="font-weight: 600; margin-bottom: 5px;">' + dish.dishName + '</div>' +
+                            '<div style="color: #0ea5e9;"><strong>' + mainLabel + ':</strong> ' + mainValue + '</div>' +
+                            '<div style="color: #666; margin-top: 3px;"><strong>' + extraLabel + ':</strong> ' + extraValue + '</div>' +
+                            '</div>';
+                    }
+                }
+            };
+
+            if (charts.topDishes) charts.topDishes.destroy();
+            charts.topDishes = new ApexCharts(document.querySelector("#topDishesChart"), options);
+            charts.topDishes.render();
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    async function loadPaymentMethodChart() {
+        const filters = getFilters();
+        const branchId = document.getElementById('branchFilter').value;
+        const url = `/Report/PaymentMethodAnalysis?startDate=${filters.startDate}&endDate=${filters.endDate}&branchId=${branchId}`;
+        
+        try {
+            const response = await fetch(url);
+            const result = await response.json();
+            if (!result.success || !result.data || result.data.length === 0) {
+                console.warn('No payment method data');
+                return;
+            }
+
+            // Map payment method names to Vietnamese
+            const methodNames = {
+                'Cash': 'Tiền mặt',
+                'Card': 'Thẻ',
+                'Transfer': 'Chuyển khoản',
+                'EWallet': 'Ví điện tử'
+            };
+
+            const labels = result.data.map(x => methodNames[x.method] || x.method);
+            const series = result.data.map(x => x.amount);
+            const colors = ['#10b981', '#0ea5e9', '#f59e0b', '#8b5cf6'];
+
+            const options = {
+                chart: {
+                    type: 'donut',
+                    height: 350,
+                    fontFamily: 'inherit'
+                },
+                series: series,
+                labels: labels,
+                colors: colors,
+                legend: {
+                    position: 'bottom',
+                    fontSize: '14px'
+                },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function(val) {
+                        return val.toFixed(1) + '%';
+                    }
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '65%',
+                            labels: {
+                                show: true,
+                                name: {
+                                    show: true,
+                                    fontSize: '16px',
+                                    fontWeight: 600
+                                },
+                                value: {
+                                    show: true,
+                                    fontSize: '20px',
+                                    fontWeight: 700,
+                                    formatter: function(val) {
+                                        return formatCurrency(val);
+                                    }
+                                },
+                                total: {
+                                    show: true,
+                                    label: 'Tổng',
+                                    fontSize: '14px',
+                                    formatter: function(w) {
+                                        const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                        return formatCurrency(total);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(val) {
+                            return formatCurrency(val);
+                        }
+                    }
+                }
+            };
+
+            if (charts.paymentMethod) charts.paymentMethod.destroy();
+            charts.paymentMethod = new ApexCharts(document.querySelector("#paymentMethodChart"), options);
+            charts.paymentMethod.render();
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    async function loadCategoryRevenueChart() {
+        const filters = getFilters();
+        const branchId = document.getElementById('branchFilter').value;
+        const groupBy = document.getElementById('categoryGroupBy').value;
+        const url = `/Report/CategoryRevenueAnalysis?startDate=${filters.startDate}&endDate=${filters.endDate}&branchId=${branchId}&groupBy=${groupBy}`;
+        
+        try {
+            const response = await fetch(url);
+            const result = await response.json();
+            if (!result.success || !result.series || result.series.length === 0) {
+                console.warn('No category revenue data');
+                return;
+            }
+
+            const options = {
+                chart: {
+                    type: 'bar',
+                    height: 350,
+                    stacked: true,
+                    fontFamily: 'inherit',
+                    toolbar: {
+                        show: true
+                    }
+                },
+                series: result.series,
+                xaxis: {
+                    categories: result.periods || [],
+                    labels: {
+                        style: {
+                            fontSize: '12px'
+                        }
+                    }
+                },
+                yaxis: {
+                    title: {
+                        text: 'Doanh thu'
+                    },
+                    labels: {
+                        formatter: function(val) {
+                            return val ? (val / 1000).toFixed(0) + 'k' : '0';
+                        }
+                    }
+                },
+                colors: ['#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'],
+                legend: {
+                    position: 'bottom',
+                    fontSize: '13px'
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(val) {
+                            return formatCurrency(val);
+                        }
+                    }
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '70%'
+                    }
+                }
+            };
+
+            if (charts.categoryRevenue) charts.categoryRevenue.destroy();
+            charts.categoryRevenue = new ApexCharts(document.querySelector("#categoryRevenueChart"), options);
+            charts.categoryRevenue.render();
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    function exportReport(type) {
+        const filters = getFilters();
+        window.open(`/Report/ExportCSV?reportType=${type}&startDate=${filters.startDate}&endDate=${filters.endDate}`, '_blank');
+    }
+
+    function refreshReports() {
+        loadRevenueTimeSeries();
+        loadTopDishesChart();
+        loadPaymentMethodChart();
+        loadCategoryRevenueChart();
+    }
+
+    // SignalR connection setup
+    async function initializeSignalR() {
+        reportConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/reportHub")
+            .withAutomaticReconnect()
+            .build();
+
+        // Lắng nghe sự kiện cập nhật revenue
+        reportConnection.on("RevenueUpdated", (data) => {
+            console.log("Revenue updated:", data);
+            refreshReports();
+        });
+
+        // Lắng nghe sự kiện cập nhật tất cả báo cáo
+        reportConnection.on("AllReportsUpdated", (data) => {
+            console.log("All reports updated:", data);
+            refreshReports();
+        });
+
+        try {
+            await reportConnection.start();
+            console.log("SignalR connected to ReportHub");
+        } catch (err) {
+            console.error("SignalR connection error:", err);
+            // Retry sau 5 giây
+            setTimeout(initializeSignalR, 5000);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshReports();
+        initializeSignalR();
+    });
+
+    // Cleanup khi rời trang
+    window.addEventListener('beforeunload', () => {
+        if (reportConnection) {
+            reportConnection.stop();
+        }
+    });
+</script>
+}

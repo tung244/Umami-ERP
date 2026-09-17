@@ -1,0 +1,120 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var items = ViewBag.Items as List<Dish>;
+    var categories = ViewBag.Categories as List<Category>;
+    int page = (int)ViewBag.CurrentPage;
+    int total = (int)ViewBag.TotalPages;
+    string search = (string)ViewBag.SearchTerm;
+    string sort = (string)ViewBag.SortOrder;
+    Guid? selectedCategoryId = ViewBag.SelectedCategoryId;
+}
+
+<div class="mb-3">
+    <a href="@Url.Action("Create")" class="btn btn-primary">Tạo món ăn mới</a>
+</div>
+
+<form method="get" class="mb-3">
+    <div class="row">
+        <div class="col-md-4">
+            <input type="text" name="search" value="@search" class="form-control" placeholder="Tìm theo tên..." />
+        </div>
+        <div class="col-md-3">
+            <select name="categoryId" class="form-select">
+                <option value="">Tất cả danh mục</option>
+                @if (categories != null)
+                {
+                    @foreach (var cat in categories)
+                    {
+                        <option value="@cat.CategoryId" selected="@(selectedCategoryId == cat.CategoryId)">@cat.Name</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="sort" class="form-select">
+                <option value="default" selected="@(sort == "default")">Mặc định</option>
+                <option value="name" selected="@(sort == "name")">Theo tên</option>
+                <option value="price" selected="@(sort == "price")">Theo giá</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-outline-secondary">Tìm</button>
+        </div>
+    </div>
+</form>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Tên món</th>
+            <th>Danh mục</th>
+            <th>Giá</th>
+            <th>Trạng thái</th>
+            <th>Online</th>
+            <th>Ngày tạo</th>
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (items != null && items.Any())
+        {
+            @foreach (var item in items)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.Category?.Name</td>
+                    <td>@item.DefaultServingPrice.ToString("N0") VND</td>
+                    <td>@(item.Active ? "Hoạt động" : "Ẩn")</td>
+                    <td>@(item.IsAvailableOnline ? "Có" : "Không")</td>
+                    <td>@item.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        <a href="@Url.Action("Details", new { id = item.DishId })" class="btn btn-sm btn-info">Chi tiết</a>
+                        <a href="@Url.Action("Edit", new { id = item.DishId })" class="btn btn-sm btn-warning">Sửa</a>
+                        <a href="@Url.Action("Index", "DishIngredient", new { dishId = item.DishId })" class="btn btn-sm btn-primary">Nguyên liệu</a>
+                        <a href="@Url.Action("Index", "MenuPriceHistory", new { dishId = item.DishId })" class="btn btn-sm btn-success">Giá</a>
+                        <form method="post" action="@Url.Action("ToggleActive", new { id = item.DishId })" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm @(item.Active ? "btn-secondary" : "btn-success")">@(item.Active ? "Ẩn" : "Hiện")</button>
+                        </form>
+                        <form method="post" action="@Url.Action("Delete", new { id = item.DishId })" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn xóa?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="7" class="text-center">Không có dữ liệu</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (total > 1)
+{
+    <nav aria-label="Phân trang">
+        <ul class="pagination">
+            @if (page > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { search, sort, categoryId = selectedCategoryId, page = page - 1 })">Trước</a>
+                </li>
+            }
+            @for (int i = Math.Max(1, page - 2); i <= Math.Min(total, page + 2); i++)
+            {
+                <li class="page-item @(i == page ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { search, sort, categoryId = selectedCategoryId, page = i })">@i</a>
+                </li>
+            }
+            @if (page < total)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { search, sort, categoryId = selectedCategoryId, page = page + 1 })">Sau</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

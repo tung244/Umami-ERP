@@ -1,0 +1,326 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var items = ViewBag.Items as List<Voucher>;
+    int currentPage = (int)ViewBag.CurrentPage;
+    int totalPages = (int)ViewBag.TotalPages;
+    string searchTerm = ViewBag.SearchTerm as string ?? "";
+    string sortOrder = ViewBag.SortOrder as string ?? "default";
+    
+    // Statistics
+    var activeVouchers = items?.Count(v => v.IsActive && v.ValidTo > DateTime.Now) ?? 0;
+    var expiredVouchers = items?.Count(v => v.ValidTo < DateTime.Now) ?? 0;
+    var totalVouchers = items?.Count ?? 0;
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+        <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="ri-ticket-line me-2"></i>@ViewBag.Title</h5>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="ri-add-line me-1"></i>Thêm Voucher Mới
+        </a>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-white mb-1">Tổng Voucher</h6>
+                                <h3 class="mb-0">@totalVouchers</h3>
+                            </div>
+                            <i class="ri-ticket-2-line" style="font-size: 48px; opacity: 0.5;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-white mb-1">Đang Hoạt Động</h6>
+                                <h3 class="mb-0">@activeVouchers</h3>
+                            </div>
+                            <i class="ri-checkbox-circle-line" style="font-size: 48px; opacity: 0.5;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-white mb-1">Đã Hết Hạn</h6>
+                                <h3 class="mb-0">@expiredVouchers</h3>
+                            </div>
+                            <i class="ri-time-line" style="font-size: 48px; opacity: 0.5;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Filter -->
+        <form method="get" class="row mb-4 g-3">
+            <div class="col-md-6">
+                <label class="form-label">Tìm kiếm</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="ri-search-line"></i></span>
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Nhập mã voucher hoặc mô tả..." value="@searchTerm" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Sắp xếp</label>
+                <select name="sort" class="form-select">
+                    <option value="" selected="@(sortOrder == "default")">Mặc định (Mới nhất)</option>
+                    <option value="code" selected="@(sortOrder == "code")">Mã A-Z</option>
+                    <option value="type" selected="@(sortOrder == "type")">Loại giảm giá</option>
+                    <option value="value" selected="@(sortOrder == "value")">Giá trị</option>
+                    <option value="validfrom" selected="@(sortOrder == "validfrom")">Hiệu lực từ</option>
+                    <option value="validto" selected="@(sortOrder == "validto")">Hết hạn gần nhất</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="ri-search-line me-1"></i>Tìm kiếm
+                </button>
+            </div>
+        </form>
+
+        <!-- Table -->
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã voucher</th>
+                        <th>Mô tả</th>
+                        <th>Loại giảm giá</th>
+                        <th>Giá trị</th>
+                        <th>Giới hạn</th>
+                        <th>Thời hạn</th>
+                        <th>Trạng thái</th>
+                        <th style="width: 120px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (items != null && items.Any())
+                    {
+                        foreach (var voucher in items)
+                        {
+                            <tr>
+                                <td>
+                                                        <strong class="text-primary">@voucher.Code</strong>
+                                                        @if (voucher.MinimumOrderAmount.HasValue)
+                                                        {
+                                                            <br/><small class="text-muted">Tối thiểu: @voucher.MinimumOrderAmount.Value.ToString("N0") VND</small>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(voucher.Description))
+                                                        {
+                                                            <span title="@voucher.Description">
+                                                                @(voucher.Description.Length > 50 ? voucher.Description.Substring(0, 50) + "..." : voucher.Description)
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">--</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @switch (voucher.DiscountType)
+                                                        {
+                                                            case VoucherDiscountType.Percentage:
+                                                                <span class="badge bg-info"><i class="ri-percent-line"></i> Phần trăm</span>
+                                                                break;
+                                                            case VoucherDiscountType.FixedAmount:
+                                                                <span class="badge bg-success"><i class="ri-money-dollar-circle-line"></i> Số tiền</span>
+                                                                break;
+                                                            case VoucherDiscountType.FreeItem:
+                                                                <span class="badge bg-warning"><i class="ri-gift-line"></i> Miễn phí</span>
+                                                                break;
+                                                        }
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if (voucher.DiscountType == VoucherDiscountType.Percentage)
+                                                        {
+                                                            <span class="badge bg-primary fs-6">@voucher.DiscountValue%</span>
+                                                        }
+                                                        else if (voucher.DiscountType == VoucherDiscountType.FixedAmount)
+                                                        {
+                                                            <span class="badge bg-success fs-6">@voucher.DiscountValue.ToString("N0") VND</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-warning fs-6">Món miễn phí</span>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if (voucher.TotalUsageLimit.HasValue || voucher.UsageLimitPerCustomer.HasValue)
+                                                        {
+                                                            @if (voucher.TotalUsageLimit.HasValue)
+                                                            {
+                                                                <div><i class="ri-group-line"></i> <strong>@voucher.TotalUsageLimit</strong> lần</div>
+                                                            }
+                                                            @if (voucher.UsageLimitPerCustomer.HasValue)
+                                                            {
+                                                                <small class="text-muted"><i class="ri-user-line"></i> @voucher.UsageLimitPerCustomer/khách</small>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">Không giới hạn</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <div><i class="ri-calendar-check-line text-success"></i> @voucher.ValidFrom.ToString("dd/MM/yyyy")</div>
+                                                        <div><i class="ri-calendar-close-line text-danger"></i> @voucher.ValidTo.ToString("dd/MM/yyyy")</div>
+                                                        @if (voucher.ValidTo < DateTime.Now)
+                                                        {
+                                                            <small class="text-danger"><i class="ri-time-line"></i> Đã hết hạn</small>
+                                                        }
+                                                        else if (voucher.ValidFrom > DateTime.Now)
+                                                        {
+                                                            <small class="text-info"><i class="ri-time-line"></i> Chưa bắt đầu</small>
+                                                        }
+                                                        else
+                                                        {
+                                                            <small class="text-success"><i class="ri-check-line"></i> Đang có hiệu lực</small>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if (voucher.IsActive && voucher.ValidTo > DateTime.Now && voucher.ValidFrom <= DateTime.Now)
+                                                        {
+                                                            <span class="badge bg-success"><i class="ri-checkbox-circle-line"></i> Đang hoạt động</span>
+                                                        }
+                                                        else if (!voucher.IsActive)
+                                                        {
+                                                            <span class="badge bg-secondary"><i class="ri-pause-circle-line"></i> Tạm dừng</span>
+                                                        }
+                                                        else if (voucher.ValidTo < DateTime.Now)
+                                                        {
+                                                            <span class="badge bg-danger"><i class="ri-close-circle-line"></i> Hết hạn</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-info"><i class="ri-time-line"></i> Chưa bắt đầu</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group btn-group-sm">
+                                                            <a href="@Url.Action("Details", new { id = voucher.VoucherId })" 
+                                                               class="btn btn-info" title="Xem chi tiết">
+                                                                <i class="ri-eye-line"></i>
+                                                            </a>
+                                                            <a href="@Url.Action("Edit", new { id = voucher.VoucherId })" 
+                                                               class="btn btn-warning" title="Chỉnh sửa">
+                                                                <i class="ri-edit-line"></i>
+                                                            </a>
+                                                            <button type="button" class="btn btn-danger" 
+                                                                    onclick="confirmDelete('@voucher.VoucherId', '@voucher.Code')"
+                                                                    title="Xóa">
+                                                                <i class="ri-delete-bin-line"></i>
+                                                            </button>
+                                                        </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <i class="ri-inbox-line" style="font-size: 48px; color: #ccc;"></i>
+                                <p class="text-muted mt-2">Không có voucher nào</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (totalPages > 1)
+        {
+            <nav aria-label="Phân trang" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = currentPage - 1, search = searchTerm, sort = sortOrder })">
+                            <i class="ri-arrow-left-s-line"></i>
+                        </a>
+                    </li>
+                    @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { page = i, search = searchTerm, sort = sortOrder })">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = currentPage + 1, search = searchTerm, sort = sortOrder })">
+                            <i class="ri-arrow-right-s-line"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa voucher</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc muốn xóa voucher này?</p>
+                <p><strong>Mã voucher:</strong> <span id="deleteVoucherCode" class="text-danger"></span></p>
+                <div class="alert alert-warning">
+                    <i class="ri-alert-line me-2"></i>
+                    <strong>Cảnh báo:</strong> Hành động này không thể hoàn tác!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="ri-delete-bin-line me-1"></i>Xóa
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(voucherId, voucherCode) {
+            $('#deleteVoucherCode').text(voucherCode);
+            $('#deleteForm').attr('action', '@Url.Action("Delete")' + '?id=' + voucherId);
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+        
+        // Auto dismiss success message after 5 seconds
+        setTimeout(function() {
+            $('.alert-success').fadeOut('slow');
+        }, 5000);
+    </script>
+}

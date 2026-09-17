@@ -1,0 +1,253 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var staff = ViewBag.Item as Staff;
+}
+
+@if (staff != null)
+{
+    <div class="row">
+        <!-- Thông tin cơ bản -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Thông tin nhân viên</h5>
+                    <a href="@Url.Action("Edit", new { id = staff.StaffId })" class="btn btn-warning btn-sm">
+                        <iconify-icon icon="mingcute:edit-line" class="me-1"></iconify-icon>
+                        Chỉnh sửa
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            @if (!string.IsNullOrEmpty(staff.AvatarUrl))
+                            {
+                                <img src="@staff.AvatarUrl" alt="Avatar" class="rounded-circle mb-2" style="width: 100px; height: 100px; object-fit: cover;">
+                            }
+                            else
+                            {
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 100px; height: 100px; font-size: 36px;">
+                                    @(string.IsNullOrEmpty(staff.FirstName) ? "?" : staff.FirstName.First().ToString().ToUpper())
+                                </div>
+                            }
+                            <div class="badge fs-6 mb-2 @(staff.IsActive ? "bg-success" : "bg-danger")">
+                                @(staff.IsActive ? "Đang làm việc" : "Đã nghỉ việc")
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Mã nhân viên</label>
+                                    <p class="mb-0">@staff.EmployeeNumber</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Họ tên</label>
+                                    <p class="mb-0">@staff.FullName</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Email</label>
+                                    <p class="mb-0">@(string.IsNullOrEmpty(staff.Email) ? "Chưa cập nhật" : staff.Email)</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Số điện thoại</label>
+                                    <p class="mb-0">@(string.IsNullOrEmpty(staff.PhoneNumber) ? "Chưa cập nhật" : staff.PhoneNumber)</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Vai trò</label>
+                                    <p class="mb-0">
+                                        <span class="badge bg-info">@staff.Role?.Name</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Chi nhánh</label>
+                                    <p class="mb-0">@staff.Branch?.Name</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Ngày vào làm</label>
+                                    <p class="mb-0">
+                                        @(staff.HireDate.HasValue ? staff.HireDate.Value.ToString("dd/MM/yyyy") : "Chưa cập nhật")
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Loại hình việc làm</label>
+                                    <p class="mb-0">
+                                        @switch (staff.EmploymentType)
+                                        {
+                                            case EmploymentType.FullTime:
+                                                <span class="badge bg-primary">Toàn thời gian</span>
+                                                break;
+                                            case EmploymentType.PartTime:
+                                                <span class="badge bg-warning">Bán thời gian</span>
+                                                break;
+                                            case EmploymentType.Contract:
+                                                <span class="badge bg-info">Hợp đồng</span>
+                                                break;
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông tin lương -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Thông tin lương</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Lương cơ bản</label>
+                            <p class="mb-0 fs-5 text-primary">
+                                @(staff.BaseSalary.HasValue ? $"{staff.BaseSalary.Value:N0} VNĐ" : "Chưa cập nhật")
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Lương theo giờ</label>
+                            <p class="mb-0 fs-5 text-primary">
+                                @(staff.HourlyRate.HasValue ? $"{staff.HourlyRate.Value:N0} VNĐ" : "Chưa cập nhật")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông tin bổ sung -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Thông tin bổ sung</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Địa chỉ</label>
+                            <p class="mb-0">@(string.IsNullOrEmpty(staff.Address) ? "Chưa cập nhật" : staff.Address)</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mã số thuế</label>
+                            <p class="mb-0">@(string.IsNullOrEmpty(staff.TaxId) ? "Chưa cập nhật" : staff.TaxId)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Chấm công gần đây -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Chấm công gần đây</h6>
+                </div>
+                <div class="card-body">
+                    @if (staff.Attendances != null && staff.Attendances.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var attendance in staff.Attendances)
+                            {
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-semibold">@attendance.ClockInAt.ToString("dd/MM/yyyy")</div>
+                                            <small class="text-muted">
+                                                Vào: @attendance.ClockInAt.ToString("HH:mm")
+                                                @if (attendance.ClockOutAt.HasValue)
+                                                {
+                                                    <span>- Ra: @attendance.ClockOutAt.Value.ToString("HH:mm")</span>
+                                                }
+                                            </small>
+                                        </div>
+                                        <span class="badge @(attendance.Status == AttendanceStatus.Approved ? "bg-success" : attendance.Status == AttendanceStatus.PendingApproval ? "bg-warning" : "bg-danger")">
+                                            @switch (attendance.Status)
+                                            {
+                                                case AttendanceStatus.Approved:
+                                                    <span>Đã duyệt</span>
+                                                    break;
+                                                case AttendanceStatus.PendingApproval:
+                                                    <span>Chờ duyệt</span>
+                                                    break;
+                                                case AttendanceStatus.Rejected:
+                                                    <span>Từ chối</span>
+                                                    break;
+                                                default:
+                                                    <span>@attendance.Status</span>
+                                                    break;
+                                            }
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">Chưa có dữ liệu chấm công</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Bảng lương gần đây -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Bảng lương gần đây</h6>
+                </div>
+                <div class="card-body">
+                    @if (staff.PayrollRecords != null && staff.PayrollRecords.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var payroll in staff.PayrollRecords)
+                            {
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-semibold">
+                                                @payroll.PayrollPeriodStart.ToString("dd/MM") - @payroll.PayrollPeriodEnd.ToString("dd/MM/yyyy")
+                                            </div>
+                                            <small class="text-muted">
+                                                @if (payroll.PaidAt.HasValue)
+                                                {
+                                                    <span>Đã thanh toán</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>Chưa thanh toán</span>
+                                                }
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-semibold text-success">@payroll.NetPay:N0} VNĐ</div>
+                                            <small class="text-muted">Lương thực lãnh</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">Chưa có dữ liệu lương</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <iconify-icon icon="mingcute:left-line" class="me-1"></iconify-icon>
+                Quay lại danh sách
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <iconify-icon icon="mingcute:user-x-line" style="font-size: 64px; color: #ccc;"></iconify-icon>
+        <h5 class="mt-3 text-muted">Không tìm thấy thông tin nhân viên</h5>
+        <a href="@Url.Action("Index")" class="btn btn-primary mt-3">Quay lại danh sách</a>
+    </div>
+}

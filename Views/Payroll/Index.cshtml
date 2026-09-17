@@ -1,0 +1,320 @@
+@{
+    ViewData["Title"] = "Quản lý bảng lương";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row gy-4">
+    <div class="col-xxxl-9">
+        <div class="row gy-4">
+            <div class="col-xxl-3 col-xl-4 col-sm-6">
+                <div class="card p-3 shadow-2 radius-8 h-100 bg-gradient-end-6">
+                    <div class="card-body p-0">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
+
+                            <div class="d-flex align-items-center gap-2">
+                                <span
+                                    class="mb-0 w-48-px h-48-px bg-cyan-100 text-cyan-600 flex-shrink-0 text-white d-flex justify-content-center align-items-center rounded-circle h6 mb-0">
+                                    <i class="ri-group-fill"></i>
+                                </span>
+                                <div>
+                                    <h6 class="fw-semibold mb-2">@ViewBag.TotalEmployees</h6>
+                                    <span class="fw-medium text-secondary-light text-sm">Tổng nhân viên</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-3 col-xl-4 col-sm-6">
+                <div class="card p-3 shadow-2 radius-8 h-100 bg-gradient-end-4">
+                    <div class="card-body p-0">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
+
+                            <div class="d-flex align-items-center gap-2">
+                                <span
+                                    class="mb-0 w-48-px h-48-px bg-lilac-100 text-lilac-600 flex-shrink-0 text-white d-flex justify-content-center align-items-center rounded-circle h6 mb-0">
+                                    <i class="ri-award-fill"></i>
+                                </span>
+                                <div>
+                                    <h6 class="fw-semibold mb-2">@String.Format("{0:N0}", (ViewBag.TotalNetPay ?? 0m))
+                                        VNĐ</h6>
+                                    <span class="fw-medium text-secondary-light text-sm">Tổng lương nhân viên</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-3 col-xl-4 col-sm-6">
+                <div class="card p-3 shadow-2 radius-8 h-100 bg-gradient-end-1">
+                    <div class="card-body p-0">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
+
+                            <div class="d-flex align-items-center gap-2">
+                                <span
+                                    class="mb-0 w-48-px h-48-px bg-primary-100 text-primary-600 flex-shrink-0 text-white d-flex justify-content-center align-items-center rounded-circle h6 mb-0">
+                                    <i class="ri-group-fill"></i>
+                                </span>
+                                <div>
+                                    <h6 class="fw-semibold mb-2">@String.Format("{0:N0}", (ViewBag.PaidAmount ?? 0m)) VNĐ</h6>
+                                    <span class="fw-medium text-secondary-light text-sm">Đã thanh toán</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-3 col-xl-4 col-sm-6">
+                <div class="card p-3 shadow-2 radius-8 h-100 bg-gradient-end-1">
+                    <div class="card-body p-0">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
+
+                            <div class="d-flex align-items-center gap-2">
+                                <span
+                                    class="mb-0 w-48-px h-48-px bg-success-100 text-success-600 flex-shrink-0 text-white d-flex justify-content-center align-items-center rounded-circle h6 mb-0">
+                                    <i class="ri-wallet-3-fill"></i>
+                                </span>
+                                <div>
+                                    <h6 class="fw-semibold mb-2">@String.Format("{0:N0}", (ViewBag.UnpaidAmount ?? 0m))
+                                        VNĐ</h6>
+                                    <span class="fw-medium text-secondary-light text-sm">Chưa thanh toán</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="row" style="margin-top: 50px;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class=row>
+                        <div class=col-md-9>
+                            <h4 class="card-title">Danh sách bảng lương</h4>
+                            <p class="card-title-desc">Quản lý và theo dõi bảng lương nhân viên</p>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="btn-group">
+                                <a href="@Url.Action("Create")" class="btn btn-success">
+                                    <i class="ri-add-line"></i> Thêm mới
+                                </a>
+                                <a href="@Url.Action("Generate", new { month = ViewBag.Month, year = ViewBag.Year })"
+                                    class="btn btn-info">
+                                    <i class="ri-magic-line"></i> Tự động tạo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+
+                    <!-- Bộ lọc tìm kiếm -->
+                    <form method="get" class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label for="searchString" class="form-label">Tìm kiếm nhân viên</label>
+                            <input type="text" class="form-control" id="searchString" name="searchString"
+                                value="@ViewBag.SearchString" placeholder="Tên hoặc mã nhân viên">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="month" class="form-label">Tháng</label>
+                            <select class="form-select" id="month" name="month">
+                                @for (int i = 1; i <= 12; i++)
+                                {
+                                    <option value="@i" selected="@(i == ViewBag.Month)">@i</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="year" class="form-label">Năm</label>
+                            <select class="form-select" id="year" name="year">
+                                @for (int i = DateTime.Now.Year - 2; i <= DateTime.Now.Year + 1; i++)
+                                {
+                                    <option value="@i" selected="@(i == ViewBag.Year)">@i</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="ri-search-line"></i> Lọc
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+
+                    <!-- Danh sách bảng lương -->
+                    <div class="table-responsive">
+                        <table class="table table-centered table-nowrap mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mã NV</th>
+                                    <th>Tên nhân viên</th>
+                                    <th>Kỳ lương</th>
+                                    <th>Lương cơ bản</th>
+                                    <th>Thưởng</th>
+                                    <th>Khấu trừ</th>
+                                    <th>Thuế</th>
+                                    <th>Lương thực nhận</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in ViewBag.Items)
+                                {
+                                    var paidAtObj = item.PaidAt;
+                                    bool isPaid = false;
+                                    if (paidAtObj != null)
+                                    {
+                                        if (paidAtObj is DateTime dt)
+                                        {
+                                            isPaid = dt != default(DateTime);
+                                        }
+                                        else
+                                        {
+                                            try { isPaid = Convert.ToDateTime(paidAtObj) != default(DateTime); }
+                                            catch
+                                            {
+                                                isPaid =
+                                            true;
+                                            }
+                                        }
+                                    }
+                                    <tr>
+                                        <td>@item.Staff.EmployeeNumber</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                               
+                                                <div>
+                                                    <p class="font-size-14 mb-0">@item.Staff.FirstName @item.Staff.LastName
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>@($"{item.PayrollPeriodStart.Month:D2}/{item.PayrollPeriodStart.Year}")</td>
+                                        <td>@item.GrossPay.ToString("N0") VNĐ</td>
+                                        <td>0 VNĐ</td>
+                                        <td>@item.Deductions.ToString("N0") VNĐ</td>
+                                        <td>@item.Taxes.ToString("N0") VNĐ</td>
+                                        <td>
+                                            <span class="fw-bold text-success">@item.NetPay.ToString("N0") VNĐ</span>
+                                        </td>
+                                        <td>
+                                            @if (isPaid)
+                                            {
+                                                <span class="badge bg-success">Đã thanh toán</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">Chưa thanh toán</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <a href="#" class="dropdown-toggle card-drop" data-bs-toggle="dropdown"
+                                                    aria-expanded="false">
+                                                    <i class="ri-more-2-fill"></i>
+                                                </a>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a href="@Url.Action("Details", new { id = item.PayrollId })"
+                                                            class="dropdown-item">Xem chi tiết</a></li>
+                                                    <li><a href="@Url.Action("Edit", new { id = item.PayrollId })"
+                                                            class="dropdown-item">Chỉnh sửa</a></li>
+                                                    @if (!isPaid)
+                                                    {
+                                                        <li>
+                                                            <button type="button" class="dropdown-item text-success"
+                                                                onclick="markAsPaid('@item.PayrollId')">
+                                                                <i class="ri-check-line"></i> Đánh dấu đã trả
+                                                            </button>
+                                                        </li>
+                                                    }
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+                                                    <li>
+                                                        <form method="post"
+                                                            action="@Url.Action("Delete", new { id = item.PayrollId })"
+                                                            style="display: inline;">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="dropdown-item text-danger"
+                                                                onclick="return confirm('Bạn có chắc muốn xóa bảng lương này?')">
+                                                                Xóa
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+
+
+                    <!-- Phân trang -->
+                    @{
+                        var prevDisabled = ViewBag.CurrentPage == 1 ? "disabled" : "";
+                        var nextDisabled = ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "";
+                    }
+
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @prevDisabled">
+                                <a class="page-link"
+                                    href="@Url.Action("Index", new { pageNumber = ViewBag.CurrentPage - 1, searchString = ViewBag.SearchString, month = ViewBag.Month, year = ViewBag.Year })"
+                                    tabindex="-1">Trước</a>
+                            </li>
+                            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                            {
+                                var activeClass = i == ViewBag.CurrentPage ? "active" : "";
+                                <li class="page-item @activeClass">
+                                    <a class="page-link"
+                                        href="@Url.Action("Index", new { pageNumber = i, searchString = ViewBag.SearchString, month = ViewBag.Month, year = ViewBag.Year })">@i</a>
+                                </li>
+                            }
+                            <li class="page-item @nextDisabled">
+                                <a class="page-link"
+                                    href="@Url.Action("Index", new { pageNumber = ViewBag.CurrentPage + 1, searchString = ViewBag.SearchString, month = ViewBag.Month, year = ViewBag.Year })">Sau</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@section Scripts {
+        <script>
+            function markAsPaid(payrollId) {
+                if (confirm('Xác nhận đã thanh toán bảng lương này?')) {
+                    $.ajax({
+                        url: '@Url.Action("MarkAsPaid", "Payroll")',
+                        type: 'POST',
+                        data: {
+                            id: payrollId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (result) {
+                            if (result.success) {
+                                location.reload();
+                            } else {
+                                alert('Có lỗi xảy ra: ' + result.message);
+                            }
+                        },
+                        error: function () {
+                            alert('Có lỗi xảy ra khi cập nhật trạng thái thanh toán.');
+                        }
+                    });
+                }
+            }
+        </script>
+}

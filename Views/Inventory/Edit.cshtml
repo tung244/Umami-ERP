@@ -1,0 +1,187 @@
+@using QuanLiKhoHang.Models.Entities
+@model InventoryItem
+
+@{
+    ViewBag.Title = "Chỉnh sửa vật phẩm";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">@ViewBag.Title</h4>
+                <div class="card-tools">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.ItemId)
+                @Html.HiddenFor(m => m.CreatedAt)
+
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="Sku">Mã SKU</label>
+                                @Html.TextBoxFor(m => m.Sku, new { @class = "form-control", placeholder = "Nhập mã SKU (tùy chọn)" })
+                                @Html.ValidationMessageFor(m => m.Sku, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="Name">Tên mặt hàng <span class="text-danger">*</span></label>
+                                @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "Nhập tên mặt hàng", required = "required" })
+                                @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="Unit">Đơn vị <span class="text-danger">*</span></label>
+                                @Html.TextBoxFor(m => m.Unit, new { @class = "form-control", placeholder = "Ví dụ: kg, lít, cái, hộp...", required = "required" })
+                                @Html.ValidationMessageFor(m => m.Unit, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="SupplierId">Nhà cung cấp</label>
+                                @{ 
+                                    var suppliers = ViewBag.Suppliers as List<QuanLiKhoHang.Models.Entities.Supplier> ?? new List<QuanLiKhoHang.Models.Entities.Supplier>();
+                                }
+                                <select name="SupplierId" id="SupplierId" class="form-control">
+                                    <option value="">-- Chọn nhà cung cấp --</option>
+                                    @foreach (var s in suppliers)
+                                    {
+                                        <option value="@s.SupplierId" selected="@(Model.SupplierId == s.SupplierId)">@s.Name</option>
+                                    }
+                                </select>
+                                <small class="form-text text-muted">Chọn nhà cung cấp cho mặt hàng (nếu có)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="CostPerUnit">Giá nhập (VND) <span class="text-danger">*</span></label>
+                                @Html.TextBoxFor(m => m.CostPerUnit, new { @class = "form-control", type = "number", step = "0.01", min = "0", placeholder = "0.00", required = "required" })
+                                @Html.ValidationMessageFor(m => m.CostPerUnit, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="ReorderLevel">Mức tồn kho tối thiểu</label>
+                                @Html.TextBoxFor(m => m.ReorderLevel, new { @class = "form-control", type = "number", min = "0", placeholder = "0" })
+                                @Html.ValidationMessageFor(m => m.ReorderLevel, "", new { @class = "text-danger" })
+                                <small class="form-text text-muted">Số lượng tối thiểu để cảnh báo hết hàng</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="ReorderQuantity">Số lượng đặt hàng lại</label>
+                                @Html.TextBoxFor(m => m.ReorderQuantity, new { @class = "form-control", type = "number", min = "0", placeholder = "0" })
+                                @Html.ValidationMessageFor(m => m.ReorderQuantity, "", new { @class = "text-danger" })
+                                <small class="form-text text-muted">Số lượng khuyến nghị khi đặt hàng lại</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="StorageLocationId">Vị trí lưu trữ</label>
+                                @{
+                                    var storageLocations = ViewBag.StorageLocations as List<QuanLiKhoHang.Models.Entities.StorageLocation> ?? new List<QuanLiKhoHang.Models.Entities.StorageLocation>();
+                                }
+                                <select name="StorageLocationId" id="StorageLocationId" class="form-control">
+                                    <option value="">-- Chọn vị trí lưu trữ --</option>
+                                    @foreach (var location in storageLocations)
+                                    {
+                                        <option value="@location.StorageLocationId" selected="@(Model.StorageLocationId == location.StorageLocationId)">@location.Name (@location.Condition)</option>
+                                    }
+                                </select>
+                                <small class="form-text text-muted">Khu vực lưu trữ cho vật phẩm này</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="ShelfLifeDays">Hạn sử dụng (ngày)</label>
+                                @Html.TextBoxFor(m => m.ShelfLifeDays, new { @class = "form-control", type = "number", min = "0", placeholder = "0" })
+                                @Html.ValidationMessageFor(m => m.ShelfLifeDays, "", new { @class = "text-danger" })
+                                <small class="form-text text-muted">Số ngày có thể lưu trữ (để trống nếu không giới hạn)</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="StorageCondition">Điều kiện lưu trữ <span class="text-danger">*</span></label>
+                                @Html.DropDownListFor(m => m.StorageCondition, 
+                                    Html.GetEnumSelectList<QuanLiKhoHang.Models.Enums.StorageCondition>(),
+                                    "-- Chọn điều kiện --",
+                                    new { @class = "form-control", required = "required" })
+                                @Html.ValidationMessageFor(m => m.StorageCondition, "", new { @class = "text-danger" })
+                                <small class="form-text text-muted">Điều kiện nhiệt độ để lưu trữ vật phẩm</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="IsActive">Trạng thái <span class="text-danger">*</span></label>
+                        <select name="IsActive" id="IsActive" class="form-control" required>
+                            @if (Model.IsActive)
+                            {
+                                <option value="true" selected>Hoạt động</option>
+                                <option value="false">Không hoạt động</option>
+                            }
+                            else
+                            {
+                                <option value="true">Hoạt động</option>
+                                <option value="false" selected>Không hoạt động</option>
+                            }
+                        </select>
+                        <small class="form-text text-muted">Chọn trạng thái kinh doanh của vật phẩm</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Số lượng hiện tại</label>
+                                <input type="text" class="form-control" value="@Model.CurrentQuantity @Model.Unit" readonly />
+                                <small class="form-text text-muted">Không thể chỉnh sửa trực tiếp. Sử dụng chức năng nhập/xuất kho</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Ngày cập nhật cuối</label>
+                                <input type="text" class="form-control" value="@Model.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")" readonly />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Cập nhật
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,183 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var items = ViewBag.Items as List<Staff>;
+    var search = ViewBag.Search as string;
+    var currentPage = (int)ViewBag.CurrentPage;
+    var totalPages = (int)ViewBag.TotalPages;
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Danh sách nhân viên</h5>
+                <a href="@Url.Action("Create")" class="btn btn-primary">
+                    <iconify-icon icon="mingcute:add-line" class="me-1"></iconify-icon>
+                    Thêm nhân viên
+                </a>
+            </div>
+
+            <div class="card-body">
+                <!-- Search Form -->
+                <form method="get" class="mb-3">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <input type="text" name="search" value="@search" class="form-control"
+                                placeholder="Tìm kiếm theo tên, mã nhân viên...">
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-outline-primary me-2">
+                                <iconify-icon icon="mingcute:search-line"></iconify-icon>
+                                Tìm kiếm
+                            </button>
+                            @if (!string.IsNullOrEmpty(search))
+                            {
+                                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                                    <iconify-icon icon="mingcute:close-line"></iconify-icon>
+                                    Xóa bộ lọc
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Staff List -->
+                @if (items != null && items.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mã NV</th>
+                                    <th>Họ tên</th>
+                                    <th>Vai trò</th>
+                                    <th>Chi nhánh</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày vào làm</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var staff in items)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-primary">@staff.EmployeeNumber</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                @if (!string.IsNullOrEmpty(staff.AvatarUrl))
+                                                {
+                                                    <img src="@staff.AvatarUrl" alt="Avatar" class="rounded-circle me-2"
+                                                        style="width: 32px; height: 32px;">
+                                                }
+                                                else
+                                                {
+                                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                        style="width: 32px; height: 32px; font-size: 12px;">
+                                                        @(string.IsNullOrEmpty(staff.FirstName) ? "?" :
+                                                                                                    staff.FirstName.First().ToString().ToUpper())
+                                                    </div>
+                                                }
+                                                <div>
+                                                    <div class="fw-semibold">@staff.FullName</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">@staff.Role?.Name</span>
+                                        </td>
+                                        <td>@staff.Branch?.Name</td>
+                                        <td>
+                                            @if (staff.IsActive)
+                                            {
+                                                <span class="badge bg-success">Đang làm việc</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">Đã nghỉ việc</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (staff.HireDate.HasValue)
+                                            {
+                                                @staff.HireDate.Value.ToString("dd/MM/yyyy")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Chưa cập nhật</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="@Url.Action("Details", new { id = staff.StaffId })"
+                                                    class="btn btn-sm btn-outline-info" title="Chi tiết">
+                                                    <iconify-icon icon="mingcute:eye-line"></iconify-icon>
+                                                </a>
+                                                <a href="@Url.Action("Edit", new { id = staff.StaffId })"
+                                                    class="btn btn-sm btn-outline-warning" title="Chỉnh sửa">
+                                                    <iconify-icon icon="mingcute:edit-line"></iconify-icon>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    @if (totalPages > 1)
+                    {
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                @if (currentPage > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = currentPage - 1, search })">
+                                            <iconify-icon icon="mingcute:left-line"></iconify-icon>
+                                        </a>
+                                    </li>
+                                }
+
+                                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                                {
+                                    <li class="page-item @(i == currentPage ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i, search })">@i</a>
+                                    </li>
+                                }
+
+                                @if (currentPage < totalPages)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = currentPage + 1, search })">
+                                            <iconify-icon icon="mingcute:right-line"></iconify-icon>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <iconify-icon icon="mingcute:user-x-line" style="font-size: 64px; color: #ccc;"></iconify-icon>
+                        <h5 class="mt-3 text-muted">Không tìm thấy nhân viên nào</h5>
+                        @if (!string.IsNullOrEmpty(search))
+                        {
+                            <p class="text-muted">Thử tìm kiếm với từ khóa khác</p>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Create")" class="btn btn-primary mt-3">
+                                <iconify-icon icon="mingcute:add-line" class="me-1"></iconify-icon>
+                                Thêm nhân viên đầu tiên
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

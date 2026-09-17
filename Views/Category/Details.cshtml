@@ -1,0 +1,37 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var item = ViewBag.Item as Category;
+}
+
+@if (item != null)
+{
+    <dl class="row">
+        <dt class="col-sm-3">Tên danh mục</dt>
+        <dd class="col-sm-9">@item.Name</dd>
+
+        <dt class="col-sm-3">Mô tả</dt>
+        <dd class="col-sm-9">@item.Description</dd>
+
+        <dt class="col-sm-3">Danh mục cha</dt>
+        <dd class="col-sm-9">@(item.ParentCategory?.Name ?? "Không có")</dd>
+
+        <dt class="col-sm-3">Thứ tự hiển thị</dt>
+        <dd class="col-sm-9">@item.DisplayOrder</dd>
+
+        <dt class="col-sm-3">Trạng thái</dt>
+        <dd class="col-sm-9">@(item.Active ? "Hoạt động" : "Không hoạt động")</dd>
+
+        <dt class="col-sm-3">Ngày tạo</dt>
+        <dd class="col-sm-9">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+
+        <dt class="col-sm-3">Ngày cập nhật</dt>
+        <dd class="col-sm-9">@(item.UpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa cập nhật")</dd>
+    </dl>
+
+    <a href="@Url.Action("Edit", new { id = item.CategoryId })" class="btn btn-warning">Sửa</a>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+}
+else
+{
+    <h1>Không tìm thấy danh mục</h1>
+}

@@ -1,0 +1,263 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var items = ViewBag.Items as List<Reservation>;
+    int page = (int)ViewBag.CurrentPage;
+    int total = (int)ViewBag.TotalPages;
+    string search = (string)ViewBag.SearchTerm;
+    string statusFilter = (string)ViewBag.StatusFilter;
+    string dateFrom = (string)ViewBag.DateFrom;
+    string dateTo = (string)ViewBag.DateTo;
+}
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="~/Dashboard">Trang chủ</a></li>
+                        <li class="breadcrumb-item active">@ViewBag.Title</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Danh sách đặt bàn</h3>
+                            <div class="card-tools">
+                                <a href="~/Reservation/Create" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus"></i> Tạo đặt bàn mới
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <form method="get" class="mb-3">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <input type="text" name="search" value="@search" class="form-control" placeholder="Tìm theo tên khách, số điện thoại..." />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select name="status" class="form-control">
+                                            <option value="">Tất cả trạng thái</option>
+                                            <option value="Pending" selected="@(statusFilter == "Pending" ? "selected" : null)">Chờ xử lý</option>
+                                            <option value="Confirmed" selected="@(statusFilter == "Confirmed" ? "selected" : null)">Đã xác nhận</option>
+                                            <option value="Completed" selected="@(statusFilter == "Completed" ? "selected" : null)">Đã hoàn thành</option>
+                                            <option value="Cancelled" selected="@(statusFilter == "Cancelled" ? "selected" : null)">Đã hủy</option>
+                                            <option value="NoShow" selected="@(statusFilter == "NoShow" ? "selected" : null)">Không đến</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="date" name="dateFrom" value="@dateFrom" class="form-control" placeholder="Từ ngày" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="date" name="dateTo" value="@dateTo" class="form-control" placeholder="Đến ngày" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-secondary mr-2">
+                                            <i class="fas fa-search"></i> Tìm kiếm
+                                        </button>
+                                        <a href="~/Reservation/Index" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times"></i> Xóa bộ lọc
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+
+                            @if (TempData["SuccessMessage"] != null)
+                            {
+                                <div class="alert alert-success alert-dismissible">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    @TempData["SuccessMessage"]
+                                </div>
+                            }
+
+                            @if (TempData["ErrorMessage"] != null)
+                            {
+                                <div class="alert alert-danger alert-dismissible">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    @TempData["ErrorMessage"]
+                                </div>
+                            }
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã đặt bàn</th>
+                                            <th>Khách hàng</th>
+                                            <th>Số người</th>
+                                            <th>Thời gian</th>
+                                            <th>Bàn</th>
+                                            <th>Trạng thái</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (items != null && items.Any())
+                                        {
+                                            foreach (var item in items)
+                                            {
+                                                <tr>
+                                                    <td>@item.ReservationId.ToString().Substring(0, 8)</td>
+                                                    <td>
+                                                        @if (item.Customer != null)
+                                                        {
+                                                            <strong>@((item.Customer.FirstName ?? "") + " " + (item.Customer.LastName ?? "")).Trim()</strong><br />
+                                                            <small class="text-muted">@item.Customer.PhoneNumber</small>
+                                                        }
+                                                        else
+                                                        {
+                                                            <em>Khách vãng lai</em>
+                                                        }
+                                                    </td>
+                                                    <td>@item.PartySize người</td>
+                                                    <td>
+                                                        @item.ReserveStartAt.ToString("dd/MM/yyyy HH:mm")<br />
+                                                        <small class="text-muted">đến @item.ReserveEndAt.ToString("HH:mm")</small>
+                                                    </td>
+                                                    <td>
+                                                        @if (item.ReservedTable != null)
+                                                        {
+                                                            @(item.ReservedTable.Name + " (" + item.ReservedTable.Code + ")")
+                                                        }
+                                                        else
+                                                        {
+                                                            <em>Chưa chọn bàn</em>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @switch (item.Status)
+                                                        {
+                                                            case ReservationStatus.Pending:
+                                                                <span class="badge badge-warning">Chờ xử lý</span>
+                                                                break;
+                                                            case ReservationStatus.Confirmed:
+                                                                <span class="badge badge-success">Đã xác nhận</span>
+                                                                break;
+                                                            case ReservationStatus.Completed:
+                                                                <span class="badge badge-info">Đã hoàn thành</span>
+                                                                break;
+                                                            case ReservationStatus.Cancelled:
+                                                                <span class="badge badge-danger">Đã hủy</span>
+                                                                break;
+                                                            case ReservationStatus.NoShow:
+                                                                <span class="badge badge-secondary">Không đến</span>
+                                                                break;
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <a href="~/Reservation/Details/@item.ReservationId" class="btn btn-info btn-sm" title="Chi tiết">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        @if (item.Status == ReservationStatus.Pending)
+                                                        {
+                                                            <a href="~/Reservation/Edit/@item.ReservationId" class="btn btn-warning btn-sm" title="Sửa">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <form method="post" action="~/Reservation/Confirm/@item.ReservationId" class="d-inline" onsubmit="return confirm('Xác nhận đặt bàn này?')">
+                                                                @Html.AntiForgeryToken()
+                                                                <button type="submit" class="btn btn-success btn-sm" title="Xác nhận">
+                                                                    <i class="fas fa-check"></i>
+                                                                </button>
+                                                            </form>
+                                                        }
+                                                        @if (item.Status == ReservationStatus.Pending || item.Status == ReservationStatus.Confirmed)
+                                                        {
+                                                            <button type="button" class="btn btn-danger btn-sm" title="Hủy" onclick="cancelReservation('@item.ReservationId')">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted">
+                                                    <i class="fas fa-inbox fa-2x mb-2"></i><br />
+                                                    Không có đặt bàn nào
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if (total > 1)
+                            {
+                                <div class="d-flex justify-content-center mt-3">
+                                    <nav aria-label="Page navigation">
+                                        <ul class="pagination">
+                                            @if (page > 1)
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page=@(page - 1)&search=@search&status=@statusFilter&dateFrom=@dateFrom&dateTo=@dateTo">
+                                                        <i class="fas fa-chevron-left"></i>
+                                                    </a>
+                                                </li>
+                                            }
+
+                                            @for (int i = Math.Max(1, page - 2); i <= Math.Min(total, page + 2); i++)
+                                            {
+                                                <li class="page-item @(i == page ? "active" : "")">
+                                                    <a class="page-link" href="?page=@i&search=@search&status=@statusFilter&dateFrom=@dateFrom&dateTo=@dateTo">@i</a>
+                                                </li>
+                                            }
+
+                                            @if (page < total)
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page=@(page + 1)&search=@search&status=@statusFilter&dateFrom=@dateFrom&dateTo=@dateTo">
+                                                        <i class="fas fa-chevron-right"></i>
+                                                    </a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </nav>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+function cancelReservation(reservationId) {
+    var reason = prompt('Lý do hủy đặt bàn:');
+    if (reason !== null && reason.trim() !== '') {
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = '/Reservation/Cancel/' + reservationId;
+
+        var reasonInput = document.createElement('input');
+        reasonInput.type = 'hidden';
+        reasonInput.name = 'reason';
+        reasonInput.value = reason;
+
+        var tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '__RequestVerificationToken';
+        tokenInput.value = '@Html.AntiForgeryToken()'.match(/value="([^"]*)"/)[1];
+
+        form.appendChild(reasonInput);
+        form.appendChild(tokenInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>

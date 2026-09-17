@@ -1,0 +1,205 @@
+@{
+    ViewData["title"] = "Kho & Công nợ";
+    ViewData["subTitle"] = "Tồn kho, Nhập hàng và Công nợ Aging Report";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card radius-8 border mb-24">
+            <div class="card-header">
+                <h5 class="mb-0 fw-bold">📦 Kho & Công nợ</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory & Purchase -->
+<div class="row mb-24">
+    <div class="col-xxl-6">
+        <div class="card radius-8 border h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-semibold">📦 Top nguyên liệu nhập nhiều nhất</h6>
+            </div>
+            <div class="card-body">
+                <div id="topPurchasedItemsChart" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xxl-6">
+        <div class="card radius-8 border h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-semibold">🏭 Nhập kho theo nhà cung cấp</h6>
+            </div>
+            <div class="card-body">
+                <div id="purchaseAnalysisChart" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let charts = {};
+    let reportConnection = null;
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+    }
+
+    async function loadTopPurchasedItems() {
+        const startDate = new Date(); startDate.setMonth(startDate.getMonth() - 6);
+        const endDate = new Date();
+        const response = await fetch(`/Report/TopPurchasedItems?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}&limit=10`);
+        const result = await response.json();
+        
+        console.log('TopPurchasedItems API response:', result); // Debug log
+        
+        if (!result.success || !result.data || result.data.length === 0) {
+            console.warn('Không có dữ liệu top nguyên liệu');
+            document.getElementById('topPurchasedItemsChart').innerHTML = '<div class="text-center text-secondary-light py-5"><p>Không có dữ liệu nhập kho trong 6 tháng gần đây</p></div>';
+            return;
+        }
+
+        const options = {
+            series: [{ 
+                name: 'Số lượng nhập', 
+                data: result.data.map(item => item.totalQuantity) 
+            }],
+            chart: { 
+                type: 'bar', 
+                height: 400,
+                toolbar: { show: false }
+            },
+            plotOptions: { 
+                bar: { 
+                    borderRadius: 4, 
+                    horizontal: true,
+                    dataLabels: {
+                        position: 'top'
+                    }
+                } 
+            },
+            colors: ['#0ea5e9'],
+            dataLabels: { 
+                enabled: true,
+                formatter: function(val) {
+                    return new Intl.NumberFormat('vi-VN').format(val);
+                },
+                offsetX: 30,
+                style: {
+                    fontSize: '11px',
+                    colors: ['#304758']
+                }
+            },
+            xaxis: { 
+                categories: result.data.map(item => item.itemName),
+                labels: {
+                    formatter: function(val) {
+                        return new Intl.NumberFormat('vi-VN').format(val);
+                    }
+                }
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        fontSize: '12px'
+                    }
+                }
+            },
+            tooltip: { 
+                y: { 
+                    formatter: function(val, { dataPointIndex }) {
+                        const item = result.data[dataPointIndex];
+                        return val + ' ' + item.unit + ' (Giá trị: ' + formatCurrency(item.totalValue) + ')';
+                    }
+                } 
+            }
+        };
+
+        if (charts.topPurchasedItems) charts.topPurchasedItems.destroy();
+        charts.topPurchasedItems = new ApexCharts(document.querySelector("#topPurchasedItemsChart"), options);
+        charts.topPurchasedItems.render();
+    }
+
+    async function loadPurchaseAnalysis() {
+        const startDate = new Date(); startDate.setDate(startDate.getDate() - 30);
+        const endDate = new Date();
+        const response = await fetch(`/Report/PurchaseAnalysis?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`);
+        const result = await response.json();
+        if (!result.success) return;
+
+        const options = {
+            series: [{ name: 'Tổng nhập', data: result.bySupplier.map(s => s.totalAmount) }],
+            chart: { type: 'bar', height: 400 },
+            plotOptions: { bar: { borderRadius: 4, horizontal: true } },
+            colors: ['#8b5cf6'],
+            dataLabels: { 
+                enabled: true, 
+                formatter: function(val) {
+                    return new Intl.NumberFormat('vi-VN').format(val) + ' đ';
+                },
+                style: {
+                    fontSize: '11px'
+                }
+            },
+            xaxis: { 
+                categories: result.bySupplier.map(s => s.supplierName),
+                labels: {
+                    formatter: function(val) {
+                        return new Intl.NumberFormat('vi-VN').format(val);
+                    }
+                }
+            },
+            tooltip: { y: { formatter: formatCurrency } }
+        };
+
+        if (charts.purchaseAnalysis) charts.purchaseAnalysis.destroy();
+        charts.purchaseAnalysis = new ApexCharts(document.querySelector("#purchaseAnalysisChart"), options);
+        charts.purchaseAnalysis.render();
+    }
+
+    function refreshReports() {
+        loadTopPurchasedItems();
+        loadPurchaseAnalysis();
+    }
+
+    // SignalR connection setup
+    async function initializeSignalR() {
+        reportConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/reportHub")
+            .withAutomaticReconnect()
+            .build();
+
+        // Lắng nghe sự kiện cập nhật inventory
+        reportConnection.on("InventoryUpdated", (data) => {
+            console.log("Inventory updated:", data);
+            refreshReports();
+        });
+
+        // Lắng nghe sự kiện cập nhật tất cả báo cáo
+        reportConnection.on("AllReportsUpdated", (data) => {
+            console.log("All reports updated:", data);
+            refreshReports();
+        });
+
+        try {
+            await reportConnection.start();
+            console.log("SignalR connected to ReportHub");
+        } catch (err) {
+            console.error("SignalR connection error:", err);
+            setTimeout(initializeSignalR, 5000);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshReports();
+        initializeSignalR();
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (reportConnection) {
+            reportConnection.stop();
+        }
+    });
+</script>
+}

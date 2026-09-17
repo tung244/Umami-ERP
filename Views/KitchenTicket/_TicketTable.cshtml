@@ -1,0 +1,77 @@
+@model List<QuanLiKhoHang.Models.Entities.OrderItem>
+@using QuanLiKhoHang.Models.Enums
+
+@{
+    (string Text, string CssClass) GetStatusInfo(OrderItemStatus status) => status switch
+    {
+        OrderItemStatus.Pending => ("Chờ xử lý", "bg-warning"),
+        OrderItemStatus.SentToKitchen => ("Đã gửi bếp", "bg-info"),
+        OrderItemStatus.Preparing => ("Đang nấu", "bg-primary"),
+        OrderItemStatus.Ready => ("Hoàn tất", "bg-success"),
+        OrderItemStatus.Served => ("Đã phục vụ", "bg-secondary"),
+        _ => (status.ToString(), "bg-light text-dark")
+    };
+}
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info text-center">Hiện không có món nào chờ bếp xử lý.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Đơn hàng</th>
+                    <th>Món</th>
+                    <th>Trạng thái</th>
+                    <th>Thông tin</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var statusInfo = GetStatusInfo(item.Status);
+                    var orderNumber = item.Order?.OrderNumber ?? "---";
+                    var tableName = item.Order?.Table?.Name ?? "Mang về";
+                    var customer = item.Order?.Customer?.FullName ?? "Khách vãng lai";
+                    var placedAt = item.Order?.PlacedAt ?? item.CreatedAt;
+                    var startEnabled = item.Status == OrderItemStatus.Pending || item.Status == OrderItemStatus.SentToKitchen;
+                    var finishEnabled = item.Status == OrderItemStatus.Preparing;
+                    var serveEnabled = item.Status == OrderItemStatus.Ready;
+
+                    <tr data-item-id="@item.OrderItemId">
+                        <td>
+                            <div class="fw-bold">@orderNumber</div>
+                            <div class="text-muted small">@tableName</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold">@item.Dish?.Name</div>
+                            <div class="text-muted small">SL: @item.Quantity</div>
+                        </td>
+                        <td>
+                            <span class="badge @statusInfo.CssClass">@statusInfo.Text</span>
+                            <div class="text-muted small">@placedAt.ToString("HH:mm")</div>
+                        </td>
+                        <td>
+                            <div class="text-muted small">@customer</div>
+                            @if (!string.IsNullOrWhiteSpace(item.SpecialInstructions))
+                            {
+                                <div class="text-muted small">@item.SpecialInstructions</div>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-warning" data-action="Preparing" @(startEnabled ? null : "disabled")>Bắt đầu</button>
+                                <button type="button" class="btn btn-success" data-action="Ready" @(finishEnabled ? null : "disabled")>Hoàn tất</button>
+                                <button type="button" class="btn btn-secondary" data-action="Served" @(serveEnabled ? null : "disabled")>Đã phục vụ</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,178 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@model Staff
+@{
+    var roles = ViewBag.Roles as List<Role>;
+    var branches = ViewBag.Branches as List<Branch>;
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Thêm nhân viên mới</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="@Url.Action("Create")" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    
+                    @* @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <ul>
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@error.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    } *@
+
+                    <div class="row">
+                        <!-- Thông tin cơ bản -->
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Thông tin cơ bản</h6>
+
+                            <div class="mb-3">
+                                <label for="FirstName" class="form-label">Họ <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="FirstName" name="FirstName"
+                                       value="@Model?.FirstName" required maxlength="64">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="LastName" class="form-label">Tên <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="LastName" name="LastName"
+                                      required maxlength="64">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="Email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="Email" name="Email"
+                                       value="@Model?.Email" maxlength="128">
+                                      @Html.ValidationMessage("Email", new { @class = "text-danger" })
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="PhoneNumber" class="form-label">Số điện thoại</label>
+                                <input type="tel" class="form-control" id="PhoneNumber" name="PhoneNumber"
+                                       value="@Model?.PhoneNumber" maxlength="32">
+                                         @Html.ValidationMessage("PhoneNumber", new { @class = "text-danger" })
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="Password" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="Password" name="Password"
+                                       required minlength="6">
+                                <div class="form-text">Mật khẩu phải có ít nhất 6 ký tự</div>
+                            </div>
+                        </div>
+
+                        <!-- Thông tin công việc -->
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Thông tin công việc</h6>
+
+                            <div class="mb-3">
+                                <label for="RoleId" class="form-label">Vai trò <span class="text-danger">*</span></label>
+                                <select class="form-select" id="RoleId" name="RoleId" required>
+                                    <option value="">Chọn vai trò</option>
+                                    @if (roles != null)
+                                    {
+                                        @foreach (var role in roles)
+                                        {
+                                            <option value="@role.RoleId" selected="@(Model?.RoleId == role.RoleId)">
+                                                @role.Name
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="BranchId" class="form-label">Chi nhánh <span class="text-danger">*</span></label>
+                                <select class="form-select" id="BranchId" name="BranchId" required>
+                                    <option value="">Chọn chi nhánh</option>
+                                    @if (branches != null)
+                                    {
+                                        @foreach (var branch in branches)
+                                        {
+                                            <option value="@branch.BranchId" selected="@(Model?.BranchId == branch.BranchId)">
+                                                @branch.Name
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="HireDate" class="form-label">Ngày vào làm</label>
+                                <input type="date" class="form-control" id="HireDate" name="HireDate"
+                                       value="@(Model?.HireDate?.ToString("yyyy-MM-dd"))">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="EmploymentType" class="form-label">Loại hình việc làm <span class="text-danger">*</span></label>
+                                <select class="form-select" id="EmploymentType" name="EmploymentType" required>
+                                    <option value="@((int)EmploymentType.FullTime)" selected="@(Model?.EmploymentType == EmploymentType.FullTime)">Toàn thời gian</option>
+                                    <option value="@((int)EmploymentType.PartTime)" selected="@(Model?.EmploymentType == EmploymentType.PartTime)">Bán thời gian</option>
+                                    <option value="@((int)EmploymentType.Contract)" selected="@(Model?.EmploymentType == EmploymentType.Contract)">Hợp đồng</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Thông tin lương -->
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Thông tin lương</h6>
+
+                            <div class="mb-3">
+                                <label for="BaseSalary" class="form-label">Lương cơ bản (VNĐ)</label>
+                                <input type="number" class="form-control" id="BaseSalary" name="BaseSalary"
+                                       value="@Model?.BaseSalary" min="0" step="1000">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="HourlyRate" class="form-label">Lương theo giờ (VNĐ)</label>
+                                <input type="number" class="form-control" id="HourlyRate" name="HourlyRate"
+                                       value="@Model?.HourlyRate" min="0" step="1000">
+                            </div>
+                        </div>
+
+                        <!-- Thông tin bổ sung -->
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Thông tin bổ sung</h6>
+
+                            <div class="mb-3">
+                                <label for="Address" class="form-label">Địa chỉ</label>
+                                <textarea class="form-control" id="Address" name="Address" rows="2">@Model?.Address</textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="TaxId" class="form-label">Mã số thuế</label>
+                                <input type="text" class="form-control" id="TaxId" name="TaxId"
+                                       value="@Model?.TaxId" maxlength="32">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="AvatarUrl" class="form-label">Ảnh đại diện</label>
+                                <input type="url" class="form-control" id="AvatarUrl" name="AvatarUrl"
+                                       value="@Model?.AvatarUrl" placeholder="https://...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <iconify-icon icon="mingcute:close-line" class="me-1"></iconify-icon>
+                            Hủy
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <iconify-icon icon="mingcute:add-line" class="me-1"></iconify-icon>
+                            Thêm nhân viên
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

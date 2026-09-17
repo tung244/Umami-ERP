@@ -1,0 +1,192 @@
+@using System.Collections.Generic
+@using System.Text.Json
+
+@{
+    var toastMessages = new Dictionary<string, string>
+    {
+        ["success"] = TempData["SuccessMessage"] as string ?? string.Empty,
+        ["error"] = TempData["ErrorMessage"] as string ?? string.Empty,
+        ["warning"] = TempData["WarningMessage"] as string ?? string.Empty,
+        ["info"] = TempData["InfoMessage"] as string ?? string.Empty,
+
+
+    };
+    var toastMessagesJson = JsonSerializer.Serialize(toastMessages);
+}
+
+<script>
+    // Cấu hình icon và tiêu đề cho từng loại toast
+    const toastConfig = {
+        'success': {
+            icon: 'mingcute:check-fill',
+            title: 'Thành công!',
+            colorClass: 'success'
+        },
+        'error': {
+            icon: 'mingcute:close-fill',
+            title: 'Lỗi!',
+            colorClass: 'danger'
+        },
+        'warning': {
+            icon: 'mingcute:warning-fill',
+            title: 'Cảnh báo!',
+            colorClass: 'warning'
+        },
+        'info': {
+            icon: 'mingcute:information-fill',
+            title: 'Thông tin!',
+            colorClass: 'info'
+        }
+    };
+
+    // Hiển thị Toast notification (hỗ trợ cả TempData và SignalR)
+    // message: string - Nội dung thông báo
+    // type: string - Loại 'success', 'error', 'warning', 'info'
+    // duration: number - Thời gian hiển thị (ms), mặc định 3000
+    function showToast(message, type = 'success', duration = 3000) {
+        // Map legacy 'danger' type to 'error'
+        if (type === 'danger') type = 'error';
+        // Lấy cấu hình cho loại toast
+        const config = toastConfig[type] || toastConfig['info'];
+        const colorClass = config.colorClass;
+
+        // Tạo HTML toast
+        const toastHtml = `
+            <div class="toast-notification shadow-2 radius-8 bg-${colorClass}-50 border border-${colorClass}-200 p-16"
+                 style="min-width: 300px; max-width: 500px; opacity: 0; transition: all 0.3s ease; transform: translateY(-8px);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="w-40-px h-40-px bg-${colorClass}-600 rounded-circle d-flex justify-content-center align-items-center flex-shrink-0">
+                    <iconify-icon icon="${config.icon}" class="icon text-white text-xl"></iconify-icon>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="text-${colorClass}-600 fw-semibold mb-1">${config.title}</h6>
+                    <p class="text-${colorClass}-700 mb-0 text-sm">${message}</p>
+                </div>
+                <button class="btn-close-toast text-${colorClass}-600 hover-text-${colorClass}-800 text-xl border-0 bg-transparent p-0" type="button">
+                    <iconify-icon icon="iconamoon:sign-times-light" class="icon"></iconify-icon>
+                </button>
+            </div>
+            <div class="progress mt-3" style="height: 3px;">
+                <div class="progress-bar bg-${colorClass}-600" style="width: 100%; transition: width ${duration}ms linear;"></div>
+            </div>
+        </div>
+    `;
+
+        // Thêm toast vào DOM (vào container top-right để stack)
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'position-fixed top-0 end-0 p-3 d-flex flex-column align-items-end';
+            container.style.zIndex = '9999';
+            container.style.pointerEvents = 'none'; // allow clicks to pass through areas without toasts
+            document.body.appendChild(container);
+        }
+
+        const toastWrapper = document.createElement('div');
+        toastWrapper.className = 'mb-2 d-flex justify-content-end';
+        toastWrapper.style.pointerEvents = 'auto';
+        toastWrapper.innerHTML = toastHtml;
+        const toast = toastWrapper.firstElementChild;
+        // set data attribute to help dedupe
+        toast.dataset.toastType = type;
+        // Dedupe: nếu đã có toast cùng message & type thì không tạo mới
+        const existing = Array.from(container.querySelectorAll('.toast-notification')).find(t => 
+            (t.dataset.toastType === type) && (t.querySelector('p')?.innerText === message)
+        );
+        if (existing) {
+            // nếu đã tồn tại, không thêm nữa
+            return;
+        }
+        container.appendChild(toastWrapper);
+        // align individual toast to the right inside wrapper
+        toast.style.marginLeft = 'auto';
+
+        // Animate in
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            // small translate for smoother appearance
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+
+        // Progress bar animation
+        setTimeout(() => {
+            toast.querySelector('.progress-bar').style.width = '0%';
+        }, 50);
+
+        // Function để ẩn toast
+        const hideToast = () => {
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                toastWrapper.remove();
+                // If container empty, remove it
+                if (container && container.children.length === 0) {
+                    container.remove();
+                }
+            }, 300);
+        };
+
+        // Auto hide sau duration
+        setTimeout(hideToast, duration);
+
+        // Close button
+        const closeBtn = toast.querySelector('.btn-close-toast');
+        if (closeBtn) closeBtn.addEventListener('click', hideToast);
+    }
+
+    // Hiển thị TempData messages khi load page
+    window.addEventListener('DOMContentLoaded', function () {
+        const messages = @Html.Raw(toastMessagesJson);
+
+        function showIfValid(msg, type) {
+            if (!msg) return;                // null, "", undefined
+            if (msg === "undefined") return; // literal string
+            if (msg === "null") return;
+            if (msg.trim() === "") return;
+            showToast(msg, type);
+        }
+
+        showIfValid(messages.success, "success");
+        showIfValid(messages.error, "error");
+        showIfValid(messages.warning, "warning");
+        showIfValid(messages.info, "info");
+    });
+
+    // SignalR - Nhận thông báo từ server khi có đơn mới
+    function initSignalR() {
+        if (typeof signalR === 'undefined') {
+            console.error("[SignalR Toast] Library chưa load!");
+            return;
+        }
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/dishHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("KitchenTicketAdded", function(data) {
+            console.log("[SignalR] 🔔 Đơn mới:", data);
+            const message = `📦 Bàn ${data.tableName} - Đơn #${data.orderNumber}`;
+            showToast(message, 'success', 5000);
+        });
+
+        connection.start()
+            .then(() => console.log("[SignalR Toast] ✓ Kết nối thành công"))
+            .catch(err => console.error("[SignalR Toast] ✗ Lỗi kết nối:", err.toString()));
+
+        connection.onreconnected(() => console.log("[SignalR Toast] ✓ Tái kết nối"));
+        connection.onclose(() => {
+            console.log("[SignalR Toast] ✗ Kết nối đã đóng, thử lại sau 5s");
+            setTimeout(initSignalR, 5000);
+        });
+    }
+
+    // Khởi động SignalR khi DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSignalR);
+    } else {
+        initSignalR();
+    }
+
+
+</script>

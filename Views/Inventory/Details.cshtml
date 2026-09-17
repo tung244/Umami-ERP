@@ -1,0 +1,220 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@model InventoryItem
+
+@{
+    ViewBag.Title = "Chi tiết mặt hàng";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">@ViewBag.Title</h4>
+                <div class="card-tools">
+                    <a href="@Url.Action("StockIn", new { id = Model.ItemId })" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus-circle"></i> Nhập kho
+                    </a>
+                    <a href="@Url.Action("StockOut", new { id = Model.ItemId })" class="btn btn-warning btn-sm">
+                        <i class="fas fa-minus-circle"></i> Xuất kho
+                    </a>
+                    <a href="@Url.Action("Edit", new { id = Model.ItemId })" class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i> Chỉnh sửa
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th style="width: 150px;">Mã SKU:</th>
+                                <td>@(string.IsNullOrEmpty(Model.Sku) ? "Không có" : Model.Sku)</td>
+                            </tr>
+                            <tr>
+                                <th>Tên mặt hàng:</th>
+                                <td><strong>@Model.Name</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Vị trí lưu trữ:</th>
+                                <td>@(Model.StorageLocation?.Name ?? "Chưa xác định")</td>
+                            </tr>
+                            <tr>
+                                <th>Đơn vị:</th>
+                                <td>@Model.Unit</td>
+                            </tr>
+                            <tr>
+                                <th>Số lượng hiện tại:</th>
+                                <td>
+                                    @if (Model.CurrentQuantity <= 0)
+                                    {
+                                        <span class="badge bg-danger text-white" style="font-size: 1.1em; padding: 8px 12px;">Hết hàng</span>
+                                    }
+                                    else if (Model.CurrentQuantity <= Model.ReorderLevel)
+                                    {
+                                        @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                                        <span class="badge bg-warning text-dark" style="font-size: 1.1em; padding: 8px 12px; font-weight: bold;">@string.Format("{0:#,##0.##}", Model.CurrentQuantity) <span>@Model.Unit</span></span>
+                                    }
+                                    else
+                                    {
+                                        @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                                        <span class="badge bg-success text-white" style="font-size: 1.1em; padding: 8px 12px; font-weight: bold;">@string.Format("{0:#,##0.##}", Model.CurrentQuantity) <span>@Model.Unit</span></span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Mức đặt hàng lại:</th>
+                                @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                                <td>@string.Format("{0:#,##0.##}", Model.ReorderLevel) @Model.Unit</td>
+                            </tr>
+                            <tr>
+                                <th>Số lượng đặt hàng lại:</th>
+                                @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                                <td>@string.Format("{0:#,##0.##}", Model.ReorderQuantity) @Model.Unit</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th style="width: 150px;">Giá nhập:</th>
+                                @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                                <td><strong class="text-primary" style="font-size: 1.2em;">@string.Format("{0:#,##0.##}", Model.CostPerUnit)</strong> <span style="color: #666;">VND</span></td>
+                            </tr>
+                            <tr>
+                                <th>Điều kiện lưu trữ:</th>
+                                <td>
+                                    <span class="badge bg-info text-dark">@Model.StorageCondition</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Hạn sử dụng:</th>
+                                <td>@(Model.ShelfLifeDays.HasValue ? $"{Model.ShelfLifeDays.Value} ngày" : "Không giới hạn")</td>
+                            </tr>
+                            <tr>
+                                <th>Trạng thái:</th>
+                                <td>
+                                    @if (Model.IsActive)
+                                    {
+                                        <span class="badge bg-success text-white">Hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary text-white">Ngừng hoạt động</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Ngày tạo:</th>
+                                <td>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <th>Ngày cập nhật:</th>
+                                <td>@Model.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                @* Không có mô tả trong entity InventoryItem *@
+
+                <hr />
+
+                <div class="row">
+                    <div class="col-12">
+                        <h5>Lịch sử giao dịch gần đây</h5>
+                        @if (ViewBag.RecentTransactions != null && ((List<StockTransaction>)ViewBag.RecentTransactions).Any())
+                        {
+                            var transactions = (List<StockTransaction>)ViewBag.RecentTransactions;
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Ngày</th>
+                                            <th>Loại</th>
+                                            <th>Số lượng</th>
+                                            <th>Đơn giá</th>
+                                            <th>Thành tiền</th>
+                                            <th>Ghi chú</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var transaction in transactions)
+                                        {
+                                            <tr>
+                                                <td>@transaction.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td>
+                                                    @switch (transaction.TransactionType)
+                                                    {
+                                                        case StockTransactionType.PurchaseIn:
+                                                            <span class="badge bg-success text-white">Nhập mua</span>
+                                                            break;
+                                                        case StockTransactionType.SaleOut:
+                                                            <span class="badge bg-danger text-white">Xuất bán</span>
+                                                            break;
+                                                        case StockTransactionType.AdjustmentIn:
+                                                            <span class="badge bg-info text-white">Điều chỉnh tăng</span>
+                                                            break;
+                                                        case StockTransactionType.AdjustmentOut:
+                                                            <span class="badge bg-secondary text-white">Điều chỉnh giảm</span>
+                                                            break;
+                                                        case StockTransactionType.TransferIn:
+                                                            <span class="badge bg-primary text-white">Chuyển đến</span>
+                                                            break;
+                                                        case StockTransactionType.TransferOut:
+                                                            <span class="badge bg-dark text-white">Chuyển đi</span>
+                                                            break;
+                                                        case StockTransactionType.Waste:
+                                                            <span class="badge bg-danger text-white">Hao hụt</span>
+                                                            break;
+                                                        default:
+                                                            <span class="badge bg-secondary text-white">@transaction.TransactionType</span>
+                                                            break;
+                                                    }
+                                                </td>
+                                                @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                                                <td>@string.Format("{0:#,##0.##}", transaction.Quantity) @Model.Unit</td>
+                                                @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                                                <td>@string.Format("{0:#,##0.##}", transaction.UnitCost ?? 0) VND</td>
+                                                @* ĐÃ SỬA ĐỊNH DẠNG SỐ *@
+                                                <td>@string.Format("{0:#,##0.##}", transaction.TotalCost ?? 0) VND</td>
+                                                <td>-</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">Chưa có giao dịch nào.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <div class="btn-group">
+                    <a href="@Url.Action("Edit", new { id = Model.ItemId })" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Chỉnh sửa
+                    </a>
+                    <form method="post" action="@Url.Action("Delete", new { id = Model.ItemId })" class="d-inline ml-2"
+                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa mặt hàng này? Tất cả lịch sử giao dịch sẽ bị xóa.')">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Xóa
+                        </button>
+                    </form>
+                </div>
+                <a href="@Url.Action("Index")" class="btn btn-secondary float-right">
+                    <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,152 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var table = ViewBag.Table as RestaurantTable;
+    var orderUrl = ViewBag.OrderUrl as string;
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <!-- Header -->
+                <div class="card-header text-center">
+                    <h2 class="h4 mb-2">
+                        <i class="fas fa-qrcode text-primary me-2"></i>
+                        @ViewBag.Title
+                    </h2>
+                    <p class="text-muted">Khách hàng quét mã QR này để tự gọi món tại bàn</p>
+                </div>
+
+                <div class="card-body">
+                    <!-- Table Info -->
+                    <div class="bg-primary text-white rounded p-3 mb-4">
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <i class="fas fa-chair fa-2x mb-2"></i>
+                                <div>
+                                    <strong>Mã bàn:</strong> @(table?.Code ?? "")
+                                </div>
+                                <div>
+                                    <strong>Tên bàn:</strong> @(table?.Name ?? "")
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <div>
+                                    <strong>Sức chứa:</strong> @(table?.Seats ?? 0) người
+                                </div>
+                                <div>
+                                    <strong>Trạng thái:</strong>
+                                    <span class="badge bg-success">@(table?.Status.ToString() ?? "")</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <i class="fas fa-map-pin fa-2x mb-2"></i>
+                                <div>
+                                    <strong>Khu vực:</strong> @(table?.Area ?? "")
+                                </div>
+                                <div>
+                                    <strong>Chi nhánh:</strong> @(table?.Branch?.Name ?? "")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- QR Code -->
+                        <div class="col-md-6">
+                            <div class="bg-white rounded p-3 text-center">
+                                <h5 class="mb-3">Mã QR gọi món</h5>
+                                <div id="qrcode" class="mb-3" style="display: flex; justify-content: center; align-items: center; min-height: 250px;"></div>
+                                <p class="text-muted small mb-2">Khách hàng quét mã để vào trang gọi món</p>
+                                <a href="@orderUrl" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-external-link-alt me-1"></i>
+                                    Mở trang gọi món
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Instructions -->
+                        <div class="col-md-6">
+                            <div class="bg-light rounded p-3">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-info-circle text-primary me-2"></i>
+                                    Hướng dẫn sử dụng
+                                </h5>
+                                <ol class="text-muted">
+                                    <li>In mã QR này và đặt tại bàn</li>
+                                    <li>Khách hàng dùng điện thoại quét mã</li>
+                                    <li>Khách chọn món và nhập số điện thoại</li>
+                                    <li>Đơn hàng tự động gửi đến bếp</li>
+                                    <li>Nhân viên phục vụ mang món ra bàn</li>
+                                </ol>
+
+                                <hr>
+
+                                <h6>URL gọi món:</h6>
+                                <code class="small">@orderUrl</code>
+
+                                <div class="mt-3">
+                                    <button onclick="printQR()" class="btn btn-success w-100">
+                                        <i class="fas fa-print me-2"></i>
+                                        In mã QR
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Back Button -->
+                    <div class="text-center mt-4">
+                        <a href="@Url.Action("Details", "Table", new { id = table?.TableId })" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Quay lại chi tiết bàn
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // Tạo QR code khi trang load
+        document.addEventListener('DOMContentLoaded', function() {
+            new QRCode(document.getElementById("qrcode"), {
+                text: "@orderUrl",
+                width: 250,
+                height: 250,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        });
+
+        function printQR() {
+            window.print();
+        }
+    </script>
+
+    <style media="print">
+        body * {
+            visibility: hidden;
+        }
+        .card, .card * {
+            visibility: visible;
+        }
+        .card {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+}

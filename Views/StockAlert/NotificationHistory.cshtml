@@ -1,0 +1,191 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var items = ViewBag.Items as List<dynamic>;
+    int page = (int)ViewBag.CurrentPage;
+    int total = (int)ViewBag.TotalPages;
+    var allItems = ViewBag.AllItems as List<InventoryItem>;
+    var selectedItemId = (Guid)ViewBag.SelectedItemId;
+    var selectedStatus = (string)ViewBag.SelectedStatus;
+}
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5></h5>
+        <a href="@Url.Action("Index")" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Quay lại cấu hình
+        </a>
+    </div>
+
+    <!-- Form lọc -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">Bộ lọc</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="itemId" class="form-label">Sản phẩm</label>
+                    <select id="itemId" name="itemId" class="form-select">
+                        <option value="">-- Tất cả sản phẩm --</option>
+                        @foreach (var item in allItems ?? new List<InventoryItem>())
+                        {
+                            if (selectedItemId == item.ItemId)
+                            {
+                                <option value="@item.ItemId" selected>@item.Name (@item.Sku)</option>
+                            }
+                            else
+                            {
+                                <option value="@item.ItemId">@item.Name (@item.Sku)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="status" class="form-label">Trạng thái</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="">-- Tất cả trạng thái --</option>
+                        @{
+                            var statuses = new[] { "Sent", "Pending", "Failed" };
+                            var statusLabels = new Dictionary<string, string> { { "Sent", "Đã gửi" }, { "Pending", "Chờ xử lý" }, { "Failed", "Thất bại" } };
+                        }
+                        @foreach (var status in statuses)
+                        {
+                            if (selectedStatus == status)
+                            {
+                                <option value="@status" selected>@statusLabels[status]</option>
+                            }
+                            else
+                            {
+                                <option value="@status">@statusLabels[status]</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-search"></i> Lọc
+                    </button>
+                    <a href="@Url.Action("NotificationHistory")" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i> Xóa lọc
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Danh sách thông báo -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Lịch sử thông báo</h5>
+        </div>
+        <div class="card-body">
+            @if (items?.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Sản phẩm</th>
+                                <th>SL hiện tại</th>
+                                <th>Ngưỡng</th>
+                                <th>Người nhận</th>
+                                <th>Trạng thái</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in items)
+                            {
+                                var notification = item.Notification as StockAlertNotification;
+                                var inventoryItem = item.Item as InventoryItem;
+
+                                var statusBadge = notification?.NotificationStatus switch
+                                {
+                                    "Sent" => "bg-success",
+                                    "Pending" => "bg-warning text-dark",
+                                    "Failed" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+
+                                var statusText = notification?.NotificationStatus switch
+                                {
+                                    "Sent" => "✓ Đã gửi",
+                                    "Pending" => "⏳ Chờ xử lý",
+                                    "Failed" => "✗ Thất bại",
+                                    _ => notification?.NotificationStatus
+                                };
+
+                                <tr>
+                                    <td>
+                                        <small>@notification?.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        <strong>@inventoryItem?.Name</strong><br />
+                                        <code>@inventoryItem?.Sku</code>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">@notification?.CurrentQuantity @inventoryItem?.Unit</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark">@notification?.ThresholdQuantity @inventoryItem?.Unit</span>
+                                    </td>
+                                    <td>
+                                        <small>@(notification?.RecipientEmails ?? "N/A")</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge @statusBadge">@statusText</span>
+                                    </td>
+                                    <td>
+                                        @if (notification?.NotificationStatus == "Sent" && notification.SentAt.HasValue)
+                                        {
+                                            <small class="text-muted">Gửi lúc: @notification.SentAt?.ToString("HH:mm:ss")</small>
+                                        }
+                                        else if (notification?.NotificationStatus == "Failed")
+                                        {
+                                            <small class="text-danger">@(notification?.ErrorMessage ?? "Lỗi không xác định")</small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">-</small>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Phân trang -->
+                @if (total > 1)
+                {
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            @for (int i = 1; i <= total; i++)
+                            {
+                                if (i == page)
+                                {
+                                    <li class="page-item active">
+                                        <span class="page-link">@i</span>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("NotificationHistory", new { page = i, itemId = selectedItemId, status = selectedStatus })">@i</a>
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Không có thông báo nào
+                </div>
+            }
+        </div>
+    </div>
+</div>

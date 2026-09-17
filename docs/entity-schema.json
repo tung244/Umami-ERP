@@ -1,0 +1,592 @@
+[
+  {
+    "Entity": "# \uD83D\uDCCB Entity Specifications - QuanLiKhoHang Database Schema",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "## \uD83D\uDE80 Entity Framework Code First Setup",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "\u0060\u0060\u0060bash",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "# 1. C\u00E0i \u0111\u1EB7t EF Core CLI tools (n\u1EBFu ch\u01B0a c\u00F3)",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "dotnet tool install --global dotnet-ef",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "# 2. T\u1EA1o migration \u0111\u1EA7u ti\u00EAn",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "dotnet ef migrations add InitialCreate",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "# 3. \u00C1p d\u1EE5ng migration l\u00EAn database",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "dotnet ef database update",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "\u0060\u0060\u0060",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "| Spec Type | C# Type | EF Attribute |",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "|-----------|---------|--------------|",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "| UUID | Guid | [Key] |",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "| BIGINT | long | - |",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "| INT | int | - |",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "| VARCHAR(n) | string | [MaxLength(n)] |",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "| TEXT | string | - |",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "| DECIMAL | decimal | [Column(TypeName = \u0022decimal(18,2)\u0022)] |",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "| DATETIME | DateTime | - |",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "| BOOLEAN | bool | - |",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "| ENUM | enum | - |",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Order",
+    "PrimaryKeys": [
+      "OrderId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "BranchId",
+        "Reference": "Branch(BranchId)"
+      },
+      {
+        "Property": "TableId",
+        "Reference": "RestaurantTable(TableId)"
+      },
+      {
+        "Property": "CustomerId",
+        "Reference": "Customer(CustomerId)"
+      },
+      {
+        "Property": "CreatedByStaffId",
+        "Reference": "Staff(StaffId)"
+      },
+      {
+        "Property": "ClosedByStaffId",
+        "Reference": "Staff(StaffId)"
+      }
+    ]
+  },
+  {
+    "Entity": "OrderItem",
+    "PrimaryKeys": [
+      "OrderItemId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "OrderId",
+        "Reference": "Order(OrderId)"
+      },
+      {
+        "Property": "DishId",
+        "Reference": "Dish(DishId)"
+      },
+      {
+        "Property": "MenuPriceId",
+        "Reference": "MenuPriceHistory(MenuPriceId)"
+      },
+      {
+        "Property": "ParentOrderItemId",
+        "Reference": "OrderItem(OrderItemId)"
+      },
+      {
+        "Property": "KitchenSectionId",
+        "Reference": "KitchenSection(KitchenSectionId)"
+      }
+    ]
+  },
+  {
+    "Entity": "Payment",
+    "PrimaryKeys": [
+      "PaymentId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "OrderId",
+        "Reference": "Order(OrderId)"
+      },
+      {
+        "Property": "ProcessedByStaffId",
+        "Reference": "Staff(StaffId)"
+      }
+    ]
+  },
+  {
+    "Entity": "Refund",
+    "PrimaryKeys": [
+      "RefundId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "OriginalPaymentId",
+        "Reference": "Payment(PaymentId)"
+      },
+      {
+        "Property": "OrderId",
+        "Reference": "Order(OrderId)"
+      },
+      {
+        "Property": "ProcessedByStaffId",
+        "Reference": "Staff(StaffId)"
+      }
+    ]
+  },
+  {
+    "Entity": "Menu \u0026 Recipe Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Dish (Menu Item)",
+    "PrimaryKeys": [
+      "DishId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "CategoryId",
+        "Reference": "Category(CategoryId)"
+      },
+      {
+        "Property": "KitchenSectionId",
+        "Reference": "KitchenSection"
+      }
+    ]
+  },
+  {
+    "Entity": "Category",
+    "PrimaryKeys": [
+      "CategoryId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "ParentCategoryId",
+        "Reference": "Category(CategoryId)"
+      }
+    ]
+  },
+  {
+    "Entity": "Recipe / DishIngredient (mapping Dish \u2192 Ingredient)",
+    "PrimaryKeys": [
+      "DishIngredientId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "DishId",
+        "Reference": "Dish(DishId)"
+      },
+      {
+        "Property": "InventoryItemId",
+        "Reference": "InventoryItem(ItemId)"
+      }
+    ]
+  },
+  {
+    "Entity": "MenuPriceHistory",
+    "PrimaryKeys": [
+      "MenuPriceId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "DishId",
+        "Reference": "Dish(DishId)"
+      },
+      {
+        "Property": "ChangedByStaffId",
+        "Reference": "Staff(StaffId)"
+      }
+    ]
+  },
+  {
+    "Entity": "Inventory \u0026 Procurement Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "InventoryItem",
+    "PrimaryKeys": [
+      "ItemId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "SupplierId",
+        "Reference": "Supplier(SupplierId)"
+      }
+    ]
+  },
+  {
+    "Entity": "StockTransaction (ledger of all inventory moves)",
+    "PrimaryKeys": [
+      "StockTransactionId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "ItemId",
+        "Reference": "InventoryItem(ItemId)"
+      }
+    ]
+  },
+  {
+    "Entity": "PurchaseOrder",
+    "PrimaryKeys": [
+      "PurchaseOrderId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "SupplierId",
+        "Reference": "Supplier(SupplierId)"
+      },
+      {
+        "Property": "BranchId",
+        "Reference": "Branch"
+      }
+    ]
+  },
+  {
+    "Entity": "PurchaseOrderLine",
+    "PrimaryKeys": [
+      "POLineId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "PurchaseOrderId",
+        "Reference": "PurchaseOrder"
+      },
+      {
+        "Property": "ItemId",
+        "Reference": "InventoryItem"
+      }
+    ]
+  },
+  {
+    "Entity": "People \u0026 HR Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Staff",
+    "PrimaryKeys": [
+      "StaffId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "RoleId",
+        "Reference": "Role(RoleId)"
+      },
+      {
+        "Property": "BranchId",
+        "Reference": "Branch(BranchId)"
+      }
+    ]
+  },
+  {
+    "Entity": "Role",
+    "PrimaryKeys": [
+      "RoleId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "StaffPermission / RolePermission",
+    "PrimaryKeys": [
+      "PermissionId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Shift",
+    "PrimaryKeys": [
+      "ShiftId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Attendance (TimeClock)",
+    "PrimaryKeys": [
+      "AttendanceId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "StaffId",
+        "Reference": "Staff"
+      },
+      {
+        "Property": "ShiftId",
+        "Reference": "Shift"
+      }
+    ]
+  },
+  {
+    "Entity": "PayrollRecord",
+    "PrimaryKeys": [
+      "PayrollId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Customer \u0026 Loyalty Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Customer",
+    "PrimaryKeys": [
+      "CustomerId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "LoyaltyAccount",
+    "PrimaryKeys": [
+      "LoyaltyAccountId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "LoyaltyTransaction",
+    "PrimaryKeys": [
+      "LoyaltyTransactionId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Voucher / Promotion",
+    "PrimaryKeys": [
+      "VoucherId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Branching \u0026 Physical Layout Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Branch",
+    "PrimaryKeys": [
+      "BranchId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Table (Dining Table)",
+    "PrimaryKeys": [
+      "TableId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Kitchen \u0026 Food Prep Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "KitchenSection",
+    "PrimaryKeys": [
+      "KitchenSectionId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "KitchenTicket",
+    "PrimaryKeys": [
+      "KitchenTicketId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Delivery \u0026 Reservation Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Reservation",
+    "PrimaryKeys": [
+      "ReservationId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "ReservedTableId",
+        "Reference": "Table"
+      }
+    ]
+  },
+  {
+    "Entity": "DeliveryOrder (extends Order logically but separate for delivery specifics)",
+    "PrimaryKeys": [
+      "DeliveryOrderId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "OrderId",
+        "Reference": "Order"
+      },
+      {
+        "Property": "DriverId",
+        "Reference": "Driver(DriverId)"
+      }
+    ]
+  },
+  {
+    "Entity": "Driver",
+    "PrimaryKeys": [
+      "DriverId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Supplier \u0026 Accounts Payable Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Supplier",
+    "PrimaryKeys": [
+      "SupplierId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "SupplierInvoice",
+    "PrimaryKeys": [
+      "SupplierInvoiceId"
+    ],
+    "ForeignKeys": [
+      {
+        "Property": "LinkedPOId",
+        "Reference": "PurchaseOrder"
+      }
+    ]
+  },
+  {
+    "Entity": "Accounting \u0026 Finance Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "FinancialTransaction",
+    "PrimaryKeys": [
+      "TransactionId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "AccountReceivable / AccountPayable (summary ledgers)",
+    "PrimaryKeys": [
+      "ARId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Expense",
+    "PrimaryKeys": [
+      "ExpenseId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Audit, System \u0026 Config Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "AuditLog",
+    "PrimaryKeys": [
+      "AuditId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Device (POS devices, printers)",
+    "PrimaryKeys": [
+      "DeviceId"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "ApplicationSetting",
+    "PrimaryKeys": [
+      "SettingKey"
+    ],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "Additional Practical Entities",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "StockCount (Inventory Audit)",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  },
+  {
+    "Entity": "StockCountLine",
+    "PrimaryKeys": [],
+    "ForeignKeys": []
+  }
+]

@@ -1,0 +1,94 @@
+@using QuanLiKhoHang.Models.Entities
+@model Dish
+@{
+    var categories = ViewBag.Categories as List<Category>;
+    var kitchenSections = ViewBag.KitchenSections as List<KitchenSection>;
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="Name" class="form-label">Tên món ăn</label>
+                <input type="text" id="Name" name="Name" class="form-control" required />
+                @Html.ValidationMessageFor(m => m.Name)
+            </div>
+            <div class="mb-3">
+                <label for="Sku" class="form-label">SKU</label>
+                <input type="text" id="Sku" name="Sku" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="CategoryId" class="form-label">Danh mục</label>
+                <select id="CategoryId" name="CategoryId" class="form-select">
+                    <option value="">Chọn danh mục</option>
+                    @if (categories != null)
+                    {
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.CategoryId">@cat.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="DefaultServingPrice" class="form-label">Giá phục vụ mặc định</label>
+                <input type="number" step="0.01" id="DefaultServingPrice" name="DefaultServingPrice" class="form-control" required />
+                @Html.ValidationMessageFor(m => m.DefaultServingPrice)
+            </div>
+            <div class="mb-3">
+                <label for="PreparationTimeMinutes" class="form-label">Thời gian chuẩn bị (phút)</label>
+                <input type="number" id="PreparationTimeMinutes" name="PreparationTimeMinutes" class="form-control" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="Description" class="form-label">Mô tả</label>
+                <textarea id="Description" name="Description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="PortionSize" class="form-label">Khẩu phần</label>
+                <input type="text" id="PortionSize" name="PortionSize" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="KitchenSectionId" class="form-label">Khu vực bếp</label>
+                <select id="KitchenSectionId" name="KitchenSectionId" class="form-select">
+                    <option value="">Chọn khu vực</option>
+                    @if (kitchenSections != null)
+                    {
+                        @foreach (var ks in kitchenSections)
+                        {
+                            <option value="@ks.KitchenSectionId">@ks.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="ImageUrl" class="form-label">URL hình ảnh</label>
+                <input type="url" id="ImageUrl" name="ImageUrl" class="form-control" />
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" id="Active" name="Active" class="form-check-input" checked />
+                        <label for="Active" class="form-check-label">Hoạt động</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" id="IsAvailableOnline" name="IsAvailableOnline" class="form-check-input" checked />
+                        <label for="IsAvailableOnline" class="form-check-label">Có sẵn online</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" id="Taxable" name="Taxable" class="form-check-input" checked />
+                        <label for="Taxable" class="form-check-label">Tính thuế</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Tạo</button>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Hủy</a>
+</form>

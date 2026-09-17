@@ -1,0 +1,92 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var item = ViewBag.Item as Dish;
+}
+
+@if (item != null)
+{
+    <div class="row">
+        <div class="col-md-8">
+            <dl class="row">
+                <dt class="col-sm-4">Tên món</dt>
+                <dd class="col-sm-8">@item.Name</dd>
+
+                <dt class="col-sm-4">SKU</dt>
+                <dd class="col-sm-8">@item.Sku</dd>
+
+                <dt class="col-sm-4">Danh mục</dt>
+                <dd class="col-sm-8">@item.Category?.Name</dd>
+
+                <dt class="col-sm-4">Giá mặc định</dt>
+                <dd class="col-sm-8">@item.DefaultServingPrice.ToString("N0") VND</dd>
+
+                <dt class="col-sm-4">Thời gian chuẩn bị</dt>
+                <dd class="col-sm-8">@item.PreparationTimeMinutes phút</dd>
+
+                <dt class="col-sm-4">Khẩu phần</dt>
+                <dd class="col-sm-8">@item.PortionSize</dd>
+
+                <dt class="col-sm-4">Khu vực bếp</dt>
+                <dd class="col-sm-8">@item.KitchenSection?.Name</dd>
+
+                <dt class="col-sm-4">Trạng thái</dt>
+                <dd class="col-sm-8">@(item.Active ? "Hoạt động" : "Ẩn")</dd>
+
+                <dt class="col-sm-4">Online</dt>
+                <dd class="col-sm-8">@(item.IsAvailableOnline ? "Có" : "Không")</dd>
+
+                <dt class="col-sm-4">Tính thuế</dt>
+                <dd class="col-sm-8">@(item.Taxable ? "Có" : "Không")</dd>
+
+                <dt class="col-sm-4">Ngày tạo</dt>
+                <dd class="col-sm-8">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                <dt class="col-sm-4">Ngày cập nhật</dt>
+                <dd class="col-sm-8">@(item.UpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa cập nhật")</dd>
+            </dl>
+        </div>
+        <div class="col-md-4">
+            @if (!string.IsNullOrEmpty(item.ImageUrl))
+            {
+                <img src="@item.ImageUrl" alt="@item.Name" class="img-fluid" />
+            }
+            else
+            {
+                <div class="text-center text-muted">Không có hình ảnh</div>
+            }
+        </div>
+    </div>
+
+    @if (item.Ingredients != null && item.Ingredients.Any())
+    {
+        <h3>Nguyên liệu</h3>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Nguyên liệu</th>
+                    <th>Số lượng/portion</th>
+                    <th>Bắt buộc</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ing in item.Ingredients)
+                {
+                    <tr>
+                        <td>@ing.InventoryItem?.Name</td>
+                        <td>@ing.QuantityPerPortion</td>
+                        <td>@(ing.IsOptional ? "Không" : "Có")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <a href="@Url.Action("Edit", new { id = item.DishId })" class="btn btn-warning">Sửa</a>
+    <a href="@Url.Action("Index", "DishIngredient", new { dishId = item.DishId })" class="btn btn-info">Quản lý nguyên liệu</a>
+    <a href="@Url.Action("Index", "MenuPriceHistory", new { dishId = item.DishId })" class="btn btn-success">Lịch sử giá</a>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+}
+else
+{
+    <h1>Không tìm thấy món ăn</h1>
+}

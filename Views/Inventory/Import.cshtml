@@ -1,0 +1,39 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    ViewBag.Title = "Nhập vật phẩm từ Excel";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">@ViewBag.Title</h4>
+                <div class="card-tools">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" asp-action="Import">
+                @Html.AntiForgeryToken()
+
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="file">Chọn file Excel (.xlsx) để nhập:</label>
+                        <input type="file" name="file" id="file" class="form-control-file" accept=".xlsx" required />
+                        <small class="form-text text-muted">
+                            Vui lòng sử dụng <a href="@Url.Action("DownloadImportTemplate")">file mẫu</a> để đảm bảo định dạng đúng.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Nhập dữ liệu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,1508 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@using System.Dynamic
+@{
+    var order = ViewBag.Order as Order;
+    var activeVouchers = ViewBag.ActiveVouchers as IEnumerable<dynamic> ?? new List<dynamic>();
+    var customerBenefits = ViewBag.CustomerBenefits as IEnumerable<dynamic> ?? new List<dynamic>();
+    // Debug
+    var voucherCount = activeVouchers?.Count() ?? 0;
+}
+
+<style>
+    .modern-card {
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .modern-card:hover {
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .btn-modern {
+        border-radius: 10px;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .btn-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .btn-served {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-payment {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+    
+    .modal-modern .modal-content {
+        border-radius: 20px;
+        border: none;
+    }
+    
+    .modal-modern .modal-header {
+        border-bottom: none;
+        padding: 25px 30px 15px;
+    }
+    
+    .modal-modern .modal-body {
+        padding: 20px 30px;
+    }
+    
+    .qr-container {
+        background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+        padding: 30px;
+        border-radius: 20px;
+        text-align: center;
+        color: #00695c;
+        margin: 20px 0;
+        border: 3px solid #00897b;
+    }
+    
+    .qr-code-wrapper {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        display: inline-block;
+        margin: 20px 0;
+    }
+    
+    .thank-you-container {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .thank-you-icon {
+        font-size: 80px;
+        color: #48bb78;
+        margin-bottom: 20px;
+        animation: scaleIn 0.5s ease;
+    }
+    
+    @@keyframes scaleIn {
+        from {
+            transform: scale(0);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .confetti {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+    }
+    
+    .payment-info {
+        background: #f7fafc;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 15px 0;
+    }
+    
+    .spinner-border-custom {
+        width: 3rem;
+        height: 3rem;
+        border-width: 0.3em;
+    }
+</style>
+
+@if (order == null)
+{
+    <div class="content-wrapper">
+        <section class="content">
+            <div class="alert alert-danger">
+                <h4><i class="icon fas fa-ban"></i> Lỗi!</h4>
+                Không tìm thấy đơn hàng này.
+            </div>
+        </section>
+    </div>
+}
+else
+{
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Đơn hàng</a></li>
+                        <li class="breadcrumb-item active">@order.OrderNumber</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Thông tin đơn hàng -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Thông tin đơn hàng</h3>
+                            <div class="card-tools">
+                                <span class="badge @(GetStatusBadgeClass(order.Status))">
+                                    @GetStatusDisplayName(order.Status)
+                                </span>
+                                @if (order.Status == OrderStatus.Open || order.Status == OrderStatus.Confirmed)
+                                {
+                                    <button type="button" class="btn btn-danger btn-sm ml-2"
+                                            onclick="deleteOrder('@order.OrderId')"
+                                            title="Xóa đơn hàng">
+                                        <i class="fas fa-trash"></i> Hủy đơn
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Mã đơn hàng:</dt>
+                                        <dd class="col-sm-8">@order.OrderNumber</dd>
+
+                                        <dt class="col-sm-4">Bàn:</dt>
+                                        <dd class="col-sm-8">@(order.Table?.Name ?? "Mang về")</dd>
+
+                                        <dt class="col-sm-4">Khách hàng:</dt>
+                                        <dd class="col-sm-8">@(order.Customer?.FullName ?? "Khách vãng lai")</dd>
+
+                                        <dt class="col-sm-4">Nhân viên:</dt>
+                                        <dd class="col-sm-8">@(order.CreatedByStaff != null ? $"{order.CreatedByStaff.FirstName} {order.CreatedByStaff.LastName}" : "N/A")</dd>
+                                    </dl>
+                                </div>
+                                <div class="col-md-6">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Thời gian tạo:</dt>
+                                        <dd class="col-sm-8">@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                                        <dt class="col-sm-4">Nguồn:</dt>
+                                        <dd class="col-sm-8">@GetOrderSourceDisplayName(order.OrderSource)</dd>
+
+                                        <dt class="col-sm-4">Trạng thái:</dt>
+                                        <dd class="col-sm-8">@GetStatusDisplayName(order.Status)</dd>
+
+                                        @if (order.ServedAt.HasValue)
+                                        {
+                                            <dt class="col-sm-4">Thời gian phục vụ:</dt>
+                                            <dd class="col-sm-8">@order.ServedAt.Value.ToString("dd/MM/yyyy HH:mm")</dd>
+                                        }
+                                    </dl>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(order.Notes))
+                            {
+                                <div class="row">
+                                    <div class="col-12">
+                                        <dt>Ghi chú:</dt>
+                                        <dd>@order.Notes</dd>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Danh sách món ăn -->
+                    <div class="card">
+                        <div class="card-body table-responsive p-0">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Món ăn</th>
+                                        <th>Số lượng</th>
+                                        <th>Đơn giá</th>
+                                        <th>Thành tiền</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ghi chú</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (order.OrderItems != null && order.OrderItems.Any())
+                                    {
+                                        foreach (var item in order.OrderItems)
+                                        {
+                                            <tr>
+                                                <td>@item.Dish?.Name</td>
+                                                <td class="quantity-cell">
+                                                    <span>@item.Quantity</span>
+                                                </td>
+                                                <td class="text-right">@item.UnitPrice.ToString("N0") VND</td>
+                                                <td class="text-right">@item.LineTotal.ToString("N0") VND</td>
+                                                <td>
+                                                    <span class="badge @(GetItemStatusBadgeClass(item.Status))">
+                                                        @GetItemStatusDisplayName(item.Status)
+                                                    </span>
+                                                </td>
+                                                <td>@item.SpecialInstructions</td>
+                                                <td>
+                                                    @if (order.Status == OrderStatus.Open || order.Status == OrderStatus.Confirmed)
+                                                    {
+                                                        <button type="button" class="btn btn-danger btn-sm"
+                                                                onclick="removeItem('@item.OrderItemId')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="7" class="text-center">Chưa có món ăn nào</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thanh toán và thao tác -->
+                <div class="col-md-4">
+                    <!-- Voucher Section -->
+                    @if (order.Status != OrderStatus.Paid && order.BalanceDue > 0)
+                    {
+                        <div class="card mb-3" style="border: 2px solid #ff9800; background: #fff3e0;">
+                            <div class="card-header" style="background: #ff9800; color: white;">
+                                <h5 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Áp dụng Voucher</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Dropdown chọn voucher -->
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Chọn voucher có sẵn:</label>
+                                    <select id="voucherDropdown" class="form-select" style="border: 2px solid #ff9800;" onchange="selectVoucherFromDropdown()">
+                                        <option value="">-- Chọn voucher --</option>
+                                        @if (voucherCount > 0)
+                                        {
+                                            foreach (var v in activeVouchers)
+                                            {
+                                                var discountText = "";
+                                                if (v.DiscountType.ToString() == "Percentage")
+                                                {
+                                                    discountText = $"Giảm {v.DiscountValue}%";
+                                                }
+                                                else if (v.DiscountType.ToString() == "FixedAmount")
+                                                {
+                                                    discountText = $"Giảm {v.DiscountValue:N0} VND";
+                                                }
+                                                else
+                                                {
+                                                    discountText = "Miễn phí món";
+                                                }
+                                                
+                                                var minOrder = v.MinimumOrderAmount != null ? $" (Tối thiểu {v.MinimumOrderAmount:N0} VND)" : "";
+                                                var optionText = $"{v.Code} - {v.Description ?? discountText}{minOrder}";
+                                                
+                                                <option value="@v.Code">@optionText</option>
+                                            }
+                                        }
+                                    </select>
+                                    <small class="text-muted">
+                                        @if (voucherCount > 0)
+                                        {
+                                            <span><i class="fas fa-check-circle text-success"></i> @voucherCount voucher khả dụng</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Không có voucher active (Check DB: IsActive=1, ValidTo > Now)</span>
+                                        }
+                                    </small>
+                                </div>
+                                
+                                <!-- Hoặc nhập mã -->
+                                <div class="text-center my-2">
+                                    <small class="text-muted">── hoặc ──</small>
+                                </div>
+                                
+                                <div class="input-group mb-2">
+                                    <input type="text" id="voucherCodeInput" class="form-control" 
+                                           placeholder="Nhập mã voucher khác" style="border: 2px solid #ff9800;">
+                                    <button type="button" class="btn btn-warning" onclick="applyVoucherAtDetail()" id="applyVoucherBtnDetail">
+                                        <i class="fas fa-check"></i> Áp dụng
+                                    </button>
+                                </div>
+                                
+                                <div id="voucherResultDetail"></div>
+                                
+                                <!-- Hidden fields để lưu voucher đã áp dụng -->
+                                <input type="hidden" id="appliedVoucherCodeDetail" value="">
+                                <input type="hidden" id="appliedDiscountAmountDetail" value="0">
+                            </div>
+                        </div>
+                    }
+                    
+                        <div class="card mb-3" style="border: 2px solid #28a745; background: #e8f5e9;">
+                            <div class="card-header" style="background: #28a745; color: white;">
+                                <h5 class="mb-0"><i class="fas fa-star me-2"></i>Quyền lợi khách hàng</h5>
+                            </div>
+                            <div class="card-body">
+                                <label class="form-label small fw-bold">Chọn quyền lợi để áp dụng:</label>
+                                <div class="input-group">
+                                    <select id="benefitDropdown" class="form-select" style="border: 2px solid #28a745;">
+                                        <option value="">-- Chọn quyền lợi --</option>
+                                        @foreach (var b in customerBenefits)
+                                        {
+                                            var discountText = "";
+                                            if (b.DiscountType.ToString() == "Percentage")
+                                            {
+                                                discountText = $"Giảm {b.DiscountValue}%";
+                                            }
+                                            else if (b.DiscountType.ToString() == "FixedAmount")
+                                            {
+                                                discountText = $"Giảm {b.DiscountValue:N0} VND";
+                                            }
+                                            var optionText = $"{b.Description} ({discountText})";
+                                            
+                                            <option value="@b.Code|@b.DiscountValue|@b.DiscountType">@optionText</option>
+                                        }
+                                    </select>
+                                    <button type="button" class="btn btn-success" onclick="applyBenefit()" id="applyBenefitBtn">
+                                        <i class="fas fa-check"></i> Áp dụng
+                                    </button>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle text-info"></i> Đây là ưu đãi dành riêng cho hạng thành viên của khách hàng.
+                                </small>
+                                <div id="benefitResultDetail" class="mt-2"></div>
+                                <input type="hidden" id="appliedBenefitCode" value="">
+                                <input type="hidden" id="appliedBenefitDiscountAmount" value="0">
+                            </div>
+                        </div>
+
+                    
+                    <!-- Tóm tắt thanh toán -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Tóm tắt thanh toán</h3>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-6">Tổng tiền hàng:</dt>
+                                <dd class="col-sm-6 text-right">@order.SubTotal.ToString("N0") VND</dd>
+
+                                @if (order.DiscountAmount > 0)
+                                {
+                                    <dt class="col-sm-6">Giảm giá:</dt>
+                                    <dd class="col-sm-6 text-right text-success">-@order.DiscountAmount.ToString("N0") VND</dd>
+                                }
+
+                                <dt class="col-sm-6">Thuế:</dt>
+                                <dd class="col-sm-6 text-right">@order.TaxAmount.ToString("N0") VND</dd>
+
+                                <dt class="col-sm-6">Phí dịch vụ:</dt>
+                                <dd class="col-sm-6 text-right">@order.ServiceChargeAmount.ToString("N0") VND</dd>
+
+                                <dt class="col-sm-6">Làm tròn:</dt>
+                                <dd class="col-sm-6 text-right">@order.RoundingAdjustment.ToString("N0") VND</dd>
+
+                                <dt class="col-sm-6 border-top pt-2"><strong>Tổng cộng:</strong></dt>
+                                <dd class="col-sm-6 border-top pt-2 text-right"><strong>@order.TotalAmount.ToString("N0") VND</strong></dd>
+
+                                <dt class="col-sm-6">Đã thanh toán:</dt>
+                                <dd class="col-sm-6 text-right">@order.PaidAmount.ToString("N0") VND</dd>
+
+                                <!-- Benefit discount (dynamic) -->
+                                <div id="benefitDiscountRow" style="display: none;" class="row">
+                                    <dt class="col-sm-6 text-success">Quyền lợi giảm giá:</dt>
+                                    <dd class="col-sm-6 text-right text-success"><strong>-<span id="benefitDiscountAmount">0</span> VND</strong></dd>
+                                </div>
+
+                                <!-- Voucher discount (dynamic) -->
+                                <div id="voucherDiscountRow" style="display: none;" class="row">
+                                    <dt class="col-sm-6 text-success">Voucher giảm giá:</dt>
+                                    <dd class="col-sm-6 text-right text-success"><strong>-<span id="voucherDiscountAmount">0</span> VND</strong></dd>
+                                </div>
+
+                                <dt class="col-sm-6 border-top pt-2"><strong>Còn lại:</strong></dt>
+                                <dd class="col-sm-6 border-top pt-2 text-right">
+                                    <strong class="@(order.BalanceDue > 0 ? "text-danger" : "text-success")" id="balanceDueAmount">@order.BalanceDue.ToString("N0")</strong> VND
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Voucher - Tính năng đang phát triển -->
+                    @* @if (order.Voucher != null)
+                    {
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Voucher áp dụng</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-success">
+                                    <h6>@order.Voucher.Code</h6>
+                                    <p class="mb-0">@order.Voucher.Description</p>
+                                    <small>Giảm @order.DiscountAmount.ToString("N0") VND</small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (order.Status == OrderStatus.Open || order.Status == OrderStatus.Confirmed)
+                    {
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Áp dụng voucher</h3>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" action="@Url.Action("ApplyVoucher")" class="form-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="orderId" value="@order.OrderId" />
+                                    <div class="input-group">
+                                        <input type="text" name="voucherCode" class="form-control"
+                                               placeholder="Nhập mã voucher" required>
+                                        <div class="input-group-append">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-tag"></i> Áp dụng
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    } *@
+
+                    <!-- Thao tác -->
+                    <div class="card modern-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Thao tác</h3>
+                        </div>
+                        <div class="card-body">
+                            @if (order.Status == OrderStatus.Open)
+                            {
+                                <form method="post" action="@Url.Action("UpdateStatus")" class="mb-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="orderId" value="@order.OrderId" />
+                                    <input type="hidden" name="newStatus" value="@OrderStatus.Confirmed" />
+                                    <button type="submit" class="btn btn-info btn-modern btn-block">
+                                        <i class="fas fa-check"></i> Xác nhận đơn hàng
+                                    </button>
+                                </form>
+                            }
+
+                            @if (order.Status == OrderStatus.Confirmed)
+                            {
+                                <form method="post" action="@Url.Action("UpdateStatus")" class="mb-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="orderId" value="@order.OrderId" />
+                                    <input type="hidden" name="newStatus" value="@OrderStatus.InPreparation" />
+                                    <button type="submit" class="btn btn-warning btn-modern btn-block">
+                                        <i class="fas fa-utensils"></i> Bắt đầu chuẩn bị
+                                    </button>
+                                </form>
+                            }
+
+                            @if (order.Status == OrderStatus.Ready)
+                            {
+                                <form method="post" action="@Url.Action("UpdateStatus")" class="mb-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="orderId" value="@order.OrderId" />
+                                    <input type="hidden" name="newStatus" value="@OrderStatus.Served" />
+                                    <button type="submit" class="btn btn-modern btn-served btn-block">
+                                        <i class="fas fa-concierge-bell"></i> Đã phục vụ
+                                    </button>
+                                </form>
+                            }
+
+                            @if (order.Status == OrderStatus.Served && order.BalanceDue > 0)
+                            {
+                                <button type="button" id="qrPaymentButton" class="btn btn-modern btn-payment btn-block" onclick="showQRPaymentModal()">
+                                    <i class="fas fa-qrcode"></i> <span id="qrPaymentButtonText">Thanh toán QR (@order.BalanceDue.ToString("N0") VND)</span>
+                                </button>
+                            }
+
+                            @if (order.Status == OrderStatus.Paid)
+                            {
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle"></i> Đơn hàng đã thanh toán hoàn tất
+                                </div>
+                            }
+
+                            <a href="@Url.Action("Index")" class="btn btn-secondary btn-modern btn-block mt-2">
+                                <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Modal thêm món ăn -->
+<div class="modal fade" id="addItemModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm món ăn</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="post" action="@Url.Action("AddItem")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="orderId" value="@order.OrderId" />
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="dishId">Chọn món ăn:</label>
+                        <select class="form-control" id="dishId" name="dishId" required>
+                            <option value="">-- Chọn món ăn --</option>
+                            @if (ViewBag.Dishes != null)
+                            {
+                                foreach (var dish in (List<Dish>)ViewBag.Dishes)
+                                {
+                                    <option value="@dish.DishId">@dish.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Số lượng:</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity"
+                               min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="specialInstructions">Ghi chú đặc biệt:</label>
+                        <textarea class="form-control" id="specialInstructions" name="specialInstructions"
+                                  rows="2" placeholder="Ví dụ: Ít cay, nhiều rau..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Thêm món</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thanh toán -->
+<div class="modal fade" id="checkoutModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thanh toán đơn hàng</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="post" action="@Url.Action("Checkout")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="orderId" value="@order.OrderId" />
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Tổng tiền cần thanh toán:</label>
+                        <h4 class="text-primary">@order.BalanceDue.ToString("N0") VND</h4>
+                    </div>
+                    <div class="form-group">
+                        <label for="paidAmount">Số tiền khách trả:</label>
+                        <input type="number" class="form-control" id="paidAmount" name="paidAmount"
+                               step="1000" min="@order.BalanceDue" value="@order.BalanceDue" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentMethod">Phương thức thanh toán:</label>
+                        <select class="form-control" id="paymentMethod" name="paymentMethod" required>
+                            <option value="Cash">Tiền mặt</option>
+                            <option value="Card">Thẻ tín dụng</option>
+                            <option value="Transfer">Chuyển khoản</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tiền thừa:</label>
+                        <h5 id="changeAmount" class="text-success">0 VND</h5>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Xác nhận thanh toán</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thanh toán QR -->
+<div class="modal fade modal-modern" id="qrPaymentModal" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-qrcode"></i> Thanh toán QR Code</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @Html.AntiForgeryToken()
+                
+                <!-- Voucher Section -->
+                <div class="voucher-section mb-4 p-3" style="background: #fff3e0; border-radius: 10px; border: 2px dashed #ff9800;">
+                    <h6 class="mb-3" style="color: #e65100;"><i class="fas fa-ticket-alt"></i> Áp dụng Voucher</h6>
+                    <div class="input-group">
+                        <input type="text" id="voucherCode" class="form-control" placeholder="Nhập mã voucher (nếu có)" style="border: 2px solid #ff9800;">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-warning" onclick="applyVoucher()" id="applyVoucherBtn">
+                                <i class="fas fa-check"></i> Áp dụng
+                            </button>
+                        </div>
+                    </div>
+                    <div id="voucherResult" class="mt-2" style="display: none;"></div>
+                    <input type="hidden" id="appliedVoucherCode" value="">
+                    <input type="hidden" id="appliedDiscountAmount" value="0">
+                </div>
+                
+                <div class="qr-container">
+                    <h4 class="mb-3" style="color: #00695c; font-weight: bold;">Quét mã QR để thanh toán</h4>
+                    <div class="payment-info mb-3 p-3" style="background: white; border-radius: 10px; border: 2px solid #00897b;">
+                        <h5 class="mb-2" style="color: #00695c;">Đơn hàng: <span id="qr-order-number" style="font-weight: bold; color: #d84315;">@order?.OrderNumber</span></h5>
+                        <div id="discountInfo" style="display: none; color: #388e3c; margin: 5px 0; font-weight: bold;"></div>
+                        <h2 style="color: #d84315; font-weight: bold; margin: 10px 0;">Số tiền: <span id="qr-amount">@order?.BalanceDue.ToString("N0")</span> VND</h2>
+                    </div>
+                    <div class="qr-code-wrapper">
+                        <div id="qr-loading" class="text-center">
+                            <div class="spinner-border spinner-border-custom text-primary" role="status">
+                                <span class="sr-only">Đang tạo mã QR...</span>
+                            </div>
+                            <p class="mt-3 text-dark">Đang tạo mã QR...</p>
+                        </div>
+                        <img id="qr-code-image" src="" alt="QR Code" style="max-width: 300px; display: none;" class="img-fluid">
+                    </div>
+                    <p class="mt-3 mb-0" style="color: #00695c; font-weight: 500;"><i class="fas fa-mobile-alt"></i> Sử dụng ứng dụng ngân hàng để quét mã QR</p>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <button type="button" class="btn btn-success btn-lg btn-modern" onclick="confirmQRPayment()" id="confirmPaymentBtn" style="display: none;">
+                        <i class="fas fa-check-circle"></i> Xác nhận đã thanh toán
+                    </button>
+                    <p class="text-muted mt-2"><small>Nhấn nút sau khi khách hàng đã chuyển khoản</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cảm ơn -->
+<div class="modal fade modal-modern" id="thankYouModal" tabindex="-1" role="dialog" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="thank-you-container">
+                    <div class="thank-you-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="mb-3">Thanh toán thành công!</h2>
+                    <h4 class="text-muted mb-4">Đơn hàng <span class="text-primary" id="thank-you-order-number"></span></h4>
+                    
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-heart"></i> Cảm ơn quý khách!</h5>
+                        <p class="mb-0">Rất vui được phục vụ quý khách. Chúng tôi hy vọng sẽ được đón tiếp quý khách trong những lần tới!</p>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted">Chúc quý khách một ngày tuyệt vời!</p>
+                        <p class="text-muted"><i class="fas fa-star text-warning"></i> <i class="fas fa-star text-warning"></i> <i class="fas fa-star text-warning"></i> <i class="fas fa-star text-warning"></i> <i class="fas fa-star text-warning"></i></p>
+                    </div>
+                    
+                    <div class="mt-4" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <a href="@Url.Action("Print", "Invoice", new { orderId = order?.OrderId })" target="_blank" class="btn btn-success btn-modern">
+                            <i class="fas fa-print"></i> In hóa đơn
+                        </a>
+                        <a href="@Url.Action("Receipt", "Invoice", new { orderId = order?.OrderId })" target="_blank" class="btn btn-info btn-modern">
+                            <i class="fas fa-receipt"></i> In phiếu
+                        </a>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary btn-lg btn-modern mt-3" onclick="closeThankYou()">
+                        <i class="fas fa-check"></i> Hoàn tất
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+<script>
+var originalBalanceDue = @order.BalanceDue; // Lưu số tiền gốc
+var paymentStatusInterval;
+// 1. Tạo kết nối đến Hub SignalR
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/paymentHub") // URL này phải khớp với app.MapHub<PaymentHub>("/paymentHub") trong Program.cs
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    // 2. Định nghĩa hàm sẽ được gọi khi server gửi tin nhắn "ReceivePaymentStatusUpdate"
+    connection.on("ReceivePaymentStatusUpdate", (orderId, status) => {
+        const currentOrderId = '@order?.OrderId'; // Lấy OrderId của trang hiện tại
+        console.log(`[SignalR] Received update: OrderId=${orderId}, Status=${status}`);
+        
+        // 3. Kiểm tra xem tin nhắn này có phải dành cho đơn hàng đang hiển thị không
+        if (orderId.toLowerCase() === currentOrderId.toLowerCase() && status === 'Received') {
+            console.log('[SignalR] Match found! Triggering payment confirmation.');
+            
+            // Dừng ngay lập tức vòng lặp polling (nếu nó đang chạy)
+            if (paymentStatusInterval) {
+                clearInterval(paymentStatusInterval);
+            }
+
+            // Cập nhật giao diện để báo cho người dùng
+            $('#payment-wait-message')
+                .html('<i class="fas fa-check-circle text-success"></i> Đã nhận thanh toán! Đang hoàn tất...')
+                .removeClass('text-primary').addClass('text-success');
+
+            // Tự động gọi hàm xác nhận thanh toán cuối cùng
+            setTimeout(function() {
+                confirmQRPayment();
+            }, 1000); // Đợi 1s cho người dùng kịp nhìn thấy thông báo
+        }
+    });
+
+    // 4. Hàm để bắt đầu kết nối (và tự động kết nối lại nếu thất bại)
+    async function startSignalRConnection() {
+        try {
+            await connection.start();
+            console.log("[SignalR] Connection established successfully.");
+        } catch (err) {
+            console.error("[SignalR] Connection failed: ", err);
+            // Đợi 5 giây rồi thử kết nối lại
+            setTimeout(startSignalRConnection, 5000);
+        }
+    }
+
+    // Sự kiện xảy ra khi kết nối bị ngắt
+    connection.onclose(async () => {
+        console.log("[SignalR] Connection closed. Attempting to restart...");
+        await startSignalRConnection();
+    });
+
+    $(document).ready(function() {
+        // Bắt đầu kết nối SignalR ngay khi trang được tải
+        startSignalRConnection();
+
+        // Sự kiện đóng modal cũ của bạn vẫn giữ nguyên
+        $('#qrPaymentModal').on('hidden.bs.modal', function () {
+            console.log('QR Modal đã đóng. Dừng vòng lặp kiểm tra.');
+            if (paymentStatusInterval) {
+                clearInterval(paymentStatusInterval);
+            }
+            $('#payment-wait-message').remove();
+        });
+        
+        // ... các sự kiện khác trong document.ready nếu có
+    });
+// Chọn voucher từ dropdown
+function selectVoucherFromDropdown() {
+    var selectedCode = $('#voucherDropdown').val();
+    if (selectedCode) {
+        $('#voucherCodeInput').val(selectedCode);
+        // Auto apply
+        applyVoucherAtDetail();
+    }
+}
+
+// Áp dụng quyền lợi khách hàng
+function applyBenefit() {
+    var selectedValue = $('#benefitDropdown').val().trim();
+    
+    if (!selectedValue) {
+        $('#benefitResultDetail').html('<div class="alert alert-warning alert-sm mt-2">Vui lòng chọn quyền lợi!</div>');
+        return;
+    }
+    
+    // Parse value: "Code|DiscountValue|DiscountType"
+    var parts = selectedValue.split('|');
+    var benefitCode = parts[0];
+    var discountValue = parseFloat(parts[1]) || 0;
+    var discountType = parts[2];
+    
+    // Tính tiền giảm
+    var discountAmount = 0;
+    if (discountType === 'Percentage') {
+        discountAmount = Math.round(originalBalanceDue * (discountValue / 100));
+    } else {
+        discountAmount = discountValue;
+    }
+    
+    // Lưu quyền lợi đã áp dụng
+    $('#appliedBenefitCode').val(benefitCode);
+    $('#appliedBenefitDiscountAmount').val(discountAmount);
+    
+    // Hiển thị thành công
+    var discountText = discountType === 'Percentage' 
+        ? `Giảm ${discountValue}%` 
+        : `Giảm ${discountValue.toLocaleString('vi-VN')} VND`;
+    
+    $('#benefitResultDetail').html(
+        '<div class="alert alert-success alert-sm mt-2">' +
+        '<i class="fas fa-check-circle"></i> Quyền lợi đã áp dụng: <strong>' + benefitCode + '</strong>' +
+        '<br/>' + discountText + ' (tiền: ' + discountAmount.toLocaleString('vi-VN') + ' VND)' +
+        '</div>'
+    );
+    
+    // Cập nhật hiển thị giảm giá
+    $('#benefitDiscountRow').show();
+    $('#benefitDiscountAmount').text(discountAmount.toLocaleString('vi-VN'));
+    
+    // Tính toán số tiền còn lại (nếu chưa có voucher)
+    var voucherDiscount = parseFloat($('#appliedDiscountAmountDetail').val()) || 0;
+    var totalDiscount = discountAmount + voucherDiscount;
+    var finalAmount = originalBalanceDue - totalDiscount;
+    if (finalAmount < 0) finalAmount = 0;
+    
+    // Cập nhật số tiền còn lại
+    $('#balanceDueAmount').text(finalAmount.toLocaleString('vi-VN'))
+        .removeClass('text-danger').addClass('text-success');
+    
+    // Cập nhật button "Thanh toán QR"
+    $('#qrPaymentButtonText').text('Thanh toán QR (' + finalAmount.toLocaleString('vi-VN') + ' VND)');
+    
+    // Disable dropdown và đổi button thành "Hủy"
+    $('#benefitDropdown').prop('disabled', true);
+    $('#applyBenefitBtn').html('<i class="fas fa-times"></i> Hủy')
+        .removeClass('btn-success').addClass('btn-secondary')
+        .attr('onclick', 'removeBenefit()');
+}
+
+// Hủy quyền lợi
+function removeBenefit() {
+    // Reset quyền lợi
+    $('#benefitDropdown').val('').prop('disabled', false);
+    $('#appliedBenefitCode').val('');
+    $('#appliedBenefitDiscountAmount').val('0');
+    $('#benefitResultDetail').html('');
+    $('#benefitDiscountRow').hide();
+    
+    // Tính toán lại số tiền (chỉ dựa trên voucher nếu có)
+    var voucherDiscount = parseFloat($('#appliedDiscountAmountDetail').val()) || 0;
+    var finalAmount = originalBalanceDue - voucherDiscount;
+    if (finalAmount < 0) finalAmount = 0;
+    
+    // Cập nhật số tiền còn lại
+    $('#balanceDueAmount').text(finalAmount.toLocaleString('vi-VN'))
+        .removeClass('text-success').addClass(finalAmount > 0 ? 'text-danger' : 'text-success');
+    
+    // Reset button "Thanh toán QR"
+    $('#qrPaymentButtonText').text('Thanh toán QR (' + finalAmount.toLocaleString('vi-VN') + ' VND)');
+    
+    // Reset button Áp dụng
+    $('#applyBenefitBtn').html('<i class="fas fa-check"></i> Áp dụng')
+        .removeClass('btn-secondary').addClass('btn-success')
+        .attr('onclick', 'applyBenefit()');
+}
+
+// Chọn voucher từ dropdown
+function selectVoucherFromDropdown() {
+    var selectedCode = $('#voucherDropdown').val();
+    if (selectedCode) {
+        $('#voucherCodeInput').val(selectedCode);
+        // Auto apply
+        applyVoucherAtDetail();
+    }
+}
+
+// Áp dụng voucher NGAY TẠI trang Detail
+function applyVoucherAtDetail() {
+    var voucherCode = $('#voucherCodeInput').val().trim();
+    
+    if (!voucherCode) {
+        $('#voucherResultDetail').html('<div class="alert alert-warning alert-sm mt-2">Vui lòng nhập mã voucher!</div>');
+        return;
+    }
+    
+    // Disable button
+    $('#applyVoucherBtnDetail').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Đang kiểm tra...');
+    
+    $.ajax({
+        url: '@Url.Action("ValidateVoucher", "Voucher")',
+        type: 'POST',
+        data: {
+            code: voucherCode,
+            orderAmount: originalBalanceDue
+        },
+        success: function(response) {
+            if (response.success) {
+                // Show success
+                $('#voucherResultDetail').html(
+                    '<div class="alert alert-success alert-sm mt-2">' +
+                    '<i class="fas fa-check-circle"></i> ' + response.message + 
+                    '<br/><strong>' + response.discountInfo + '</strong>' +
+                    '</div>'
+                );
+                
+                // Lưu voucher đã áp dụng
+                $('#appliedVoucherCodeDetail').val(response.voucherCode);
+                $('#appliedDiscountAmountDetail').val(response.discountAmount);
+                
+                // Cập nhật hiển thị
+                $('#voucherDiscountAmount').text(response.discountAmount.toLocaleString('vi-VN'));
+                $('#voucherDiscountRow').show();
+                
+                // Tính toán lại số tiền còn lại (bao gồm benefit nếu có)
+                var benefitDiscount = parseFloat($('#appliedBenefitDiscountAmount').val()) || 0;
+                var totalDiscount = response.discountAmount + benefitDiscount;
+                var finalAmount = originalBalanceDue - totalDiscount;
+                if (finalAmount < 0) finalAmount = 0;
+                
+                // Cập nhật số tiền còn lại
+                $('#balanceDueAmount').text(finalAmount.toLocaleString('vi-VN'))
+                    .removeClass('text-danger').addClass('text-success');
+                
+                // Cập nhật button "Thanh toán QR"
+                $('#qrPaymentButtonText').text('Thanh toán QR (' + finalAmount.toLocaleString('vi-VN') + ' VND)');
+                
+                // Disable input, dropdown và đổi button thành "Hủy"
+                $('#voucherCodeInput').prop('disabled', true);
+                $('#voucherDropdown').prop('disabled', true);
+                $('#applyVoucherBtnDetail').html('<i class="fas fa-times"></i> Hủy')
+                    .removeClass('btn-warning').addClass('btn-secondary')
+                    .attr('onclick', 'removeVoucherAtDetail()').prop('disabled', false);
+            } else {
+                $('#voucherResultDetail').html(
+                    '<div class="alert alert-danger alert-sm mt-2">' +
+                    '<i class="fas fa-times-circle"></i> ' + response.message +
+                    '</div>'
+                );
+                $('#applyVoucherBtnDetail').html('<i class="fas fa-check"></i> Áp dụng').prop('disabled', false);
+            }
+        },
+        error: function() {
+            $('#voucherResultDetail').html('<div class="alert alert-danger alert-sm mt-2">Lỗi kết nối! Vui lòng thử lại.</div>');
+            $('#applyVoucherBtnDetail').html('<i class="fas fa-check"></i> Áp dụng').prop('disabled', false);
+        }
+    });
+}
+
+// Hủy voucher
+function removeVoucherAtDetail() {
+    // Reset voucher
+    $('#voucherCodeInput').val('').prop('disabled', false);
+    $('#voucherDropdown').val('').prop('disabled', false); // Reset dropdown
+    $('#appliedVoucherCodeDetail').val('');
+    $('#appliedDiscountAmountDetail').val('0');
+    $('#voucherResultDetail').html('');
+    $('#voucherDiscountRow').hide();
+    
+    // Tính lại số tiền (chỉ dựa trên benefit nếu có)
+    var benefitDiscount = parseFloat($('#appliedBenefitDiscountAmount').val()) || 0;
+    var finalAmount = originalBalanceDue - benefitDiscount;
+    if (finalAmount < 0) finalAmount = 0;
+    
+    // Cập nhật số tiền
+    $('#balanceDueAmount').text(finalAmount.toLocaleString('vi-VN'))
+        .removeClass('text-success').addClass(finalAmount > 0 ? 'text-danger' : 'text-success');
+    
+    // Reset button "Thanh toán QR"
+    $('#qrPaymentButtonText').text('Thanh toán QR (' + finalAmount.toLocaleString('vi-VN') + ' VND)');
+    
+    // Reset button Áp dụng
+    $('#applyVoucherBtnDetail').html('<i class="fas fa-check"></i> Áp dụng')
+        .removeClass('btn-secondary').addClass('btn-warning')
+        .attr('onclick', 'applyVoucherAtDetail()');
+}
+
+function getAntiForgeryToken() {
+    return $('input[name="__RequestVerificationToken"]').val();
+}
+
+function showAddItemModal() {
+    $('#addItemModal').modal('show');
+}
+
+function showCheckoutModal() {
+    $('#checkoutModal').modal('show');
+}
+
+function removeItem(orderItemId) {
+    if (confirm('Bạn có chắc muốn xóa món ăn này?')) {
+        $.ajax({
+            url: '@Url.Action("RemoveItem", "Order")',
+            type: 'POST',
+            data: {
+                orderId: '@order.OrderId',
+                orderItemId: orderItemId,
+                __RequestVerificationToken: getAntiForgeryToken()
+            },
+            success: function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Có lỗi xảy ra khi xóa món ăn!');
+            }
+        });
+    }
+}
+
+function increaseQuantity(orderItemId) {
+    var currentInput = $('.qty-' + orderItemId);
+    var currentQty = parseInt(currentInput.val());
+    updateQuantity(orderItemId, currentQty + 1);
+}
+
+function decreaseQuantity(orderItemId) {
+    var currentInput = $('.qty-' + orderItemId);
+    var currentQty = parseInt(currentInput.val());
+    if (currentQty > 1) {
+        updateQuantity(orderItemId, currentQty - 1);
+    } else {
+        alert('Số lượng phải lớn hơn 1!');
+    }
+}
+
+function updateQuantity(orderItemId, newQuantity) {
+    if (newQuantity < 1) {
+        alert('Số lượng phải lớn hơn 0!');
+        return;
+    }
+
+    $.ajax({
+        url: '@Url.Action("UpdateItemQuantity", "Order")',
+        type: 'POST',
+        data: {
+            orderId: '@order.OrderId',
+            orderItemId: orderItemId,
+            newQuantity: newQuantity,
+            __RequestVerificationToken: getAntiForgeryToken()
+        },
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('Lỗi: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Có lỗi xảy ra khi cập nhật số lượng!');
+        }
+    });
+}
+
+function deleteOrder(orderId) {
+    if (confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
+        $.ajax({
+            url: '@Url.Action("Delete", "Order")',
+            type: 'POST',
+            data: { 
+                orderId: orderId,
+                __RequestVerificationToken: getAntiForgeryToken()
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    window.location.href = '@Url.Action("Index", "Order")';
+                } else {
+                    alert('Lỗi: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Có lỗi xảy ra khi hủy đơn hàng!');
+            }
+        });
+    }
+}
+
+function applyVoucher() {
+    var voucherCode = $('#voucherCode').val().trim();
+    var originalAmount = @order?.BalanceDue;
+    
+    if (!voucherCode) {
+        $('#voucherResult').html('<div class="alert alert-warning alert-sm">Vui lòng nhập mã voucher!</div>').show();
+        return;
+    }
+    
+    // Disable button
+    $('#applyVoucherBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span>Đang kiểm tra...');
+    
+    $.ajax({
+        url: '@Url.Action("ValidateVoucher", "Voucher")',
+        type: 'POST',
+        data: {
+            code: voucherCode,
+            orderAmount: originalAmount
+        },
+        success: function(response) {
+            if (response.success) {
+                // Show success
+                $('#voucherResult').html('<div class="alert alert-success alert-sm"><i class="fas fa-check-circle"></i> ' + response.message + '<br/><strong>' + response.discountInfo + '</strong></div>').show();
+                
+                // Update amounts
+                $('#appliedVoucherCode').val(response.voucherCode);
+                $('#appliedDiscountAmount').val(response.discountAmount);
+                
+                // Show original amount
+                $('#originalAmount').show();
+                
+                // Show discount info
+                $('#discountInfo').html('<h6><i class="fas fa-tag"></i> Giảm giá: -' + response.discountAmount.toLocaleString('vi-VN') + ' VND</h6>').show();
+                
+                // Update final amount
+                $('#qr-amount').text(response.finalAmount.toLocaleString('vi-VN'));
+                
+                // Disable voucher input
+                $('#voucherCode').prop('disabled', true);
+                $('#applyVoucherBtn').html('<i class="fas fa-times"></i> Hủy').attr('onclick', 'removeVoucher()').prop('disabled', false);
+            } else {
+                $('#voucherResult').html('<div class="alert alert-danger alert-sm"><i class="fas fa-times-circle"></i> ' + response.message + '</div>').show();
+                $('#applyVoucherBtn').html('<i class="fas fa-check"></i> Áp dụng').prop('disabled', false);
+            }
+        },
+        error: function() {
+            $('#voucherResult').html('<div class="alert alert-danger alert-sm">Lỗi kết nối! Vui lòng thử lại.</div>').show();
+            $('#applyVoucherBtn').html('<i class="fas fa-check"></i> Áp dụng').prop('disabled', false);
+        }
+    });
+}
+
+function removeVoucher() {
+    var originalAmount = @order?.BalanceDue;
+    
+    // Reset
+    $('#voucherCode').val('').prop('disabled', false);
+    $('#appliedVoucherCode').val('');
+    $('#appliedDiscountAmount').val('0');
+    $('#voucherResult').hide();
+    $('#originalAmount').hide();
+    $('#discountInfo').hide();
+    $('#qr-amount').text(originalAmount.toLocaleString('vi-VN'));
+    $('#applyVoucherBtn').html('<i class="fas fa-check"></i> Áp dụng').attr('onclick', 'applyVoucher()');
+}
+
+function showQRPaymentModal() {
+    // Lấy discount từ benefit và voucher
+    var benefitDiscount = parseFloat($('#appliedBenefitDiscountAmount').val()) || 0;
+    var voucherDiscount = parseFloat($('#appliedDiscountAmountDetail').val()) || 0;
+    var totalDiscount = benefitDiscount + voucherDiscount;
+    var finalAmount = originalBalanceDue - totalDiscount;
+    if (finalAmount < 0) finalAmount = 0;
+    
+    console.log('Opening QR Modal - Benefit:', benefitDiscount, 'Voucher:', voucherDiscount, 'Final:', finalAmount);
+    
+    // Copy discount vào modal
+    if (benefitDiscount > 0) {
+        $('#discountInfo').html('Quyền lợi giảm: -' + benefitDiscount.toLocaleString('vi-VN') + ' VND').show();
+    }
+    
+    if (voucherDiscount > 0) {
+        var voucherCode = $('#appliedVoucherCodeDetail').val();
+        $('#voucherCode').val(voucherCode).prop('disabled', true);
+        $('#voucherResult').html(
+            '<div class="alert alert-success alert-sm">' +
+            '<i class="fas fa-check-circle"></i> Đã áp dụng voucher: <strong>' + voucherCode + '</strong>' +
+            '<br/>Giảm: ' + voucherDiscount.toLocaleString('vi-VN') + ' VND' +
+            '</div>'
+        ).show();
+        $('#applyVoucherBtn').html('<i class="fas fa-times"></i> Hủy').attr('onclick', 'removeVoucher()');
+    }
+    
+    $('#qr-amount').text(finalAmount.toLocaleString('vi-VN'));
+    
+    $('#qrPaymentModal').modal('show');
+    $('#confirmPaymentBtn').hide(); 
+    $('#qr-code-wrapper').after('<p id="payment-wait-message" class="text-center text-primary mt-3 font-weight-bold" style="font-size: 1.1rem;"><i class="fas fa-sync fa-spin"></i> Đang chờ khách hàng thanh toán...</p>');
+    
+    // Gọi API để lấy QR code với số tiền đã giảm
+    $.ajax({
+        url: '@Url.Action("GenerateQRPayment", "Order")',
+        type: 'GET',
+        data: { 
+            orderId: '@order?.OrderId',
+            amount: finalAmount  // Gửi số tiền đã giảm
+        },
+        success: function(data) {
+            // Hiển thị QR code
+            $('#qr-loading').hide();
+            $('#qr-code-image').attr('src', data.qrUrl).show();
+            startPaymentStatusChecker(); 
+        },
+        error: function() {
+            $('#qr-loading').html('<p class="text-danger">Không thể tạo mã QR. Vui lòng thử lại.</p>');
+        }
+    });
+}
+$(document).ready(function() {
+    // Sự kiện được kích hoạt KHI modal ĐÃ ĐƯỢC ĐÓNG HOÀN TOÀN
+    $('#qrPaymentModal').on('hidden.bs.modal', function () {
+        console.log('QR Modal đã đóng. Dừng vòng lặp kiểm tra.');
+        if (paymentStatusInterval) {
+            clearInterval(paymentStatusInterval);
+        }
+        // Xóa thông báo chờ để lần mở sau không bị hiện lại
+        $('#payment-wait-message').remove();
+    });
+});
+
+function startPaymentStatusChecker() {
+    const orderId = '@order?.OrderId';
+
+    // Dừng các vòng lặp cũ (nếu có) để đảm bảo chỉ có 1 vòng lặp chạy
+    if (paymentStatusInterval) {
+        clearInterval(paymentStatusInterval);
+    }
+    
+    paymentStatusInterval = setInterval(function() {
+        $.ajax({
+            url: '@Url.Action("CheckPaymentStatus", "Order")',
+            type: 'GET',
+            data: { orderId: orderId },
+            success: function(response) {
+                console.log('Checking payment status...', response.paymentStatus);
+                
+                if (response.paymentStatus === 'Received') {
+                    // DỪNG VÒNG LẶP
+                    clearInterval(paymentStatusInterval);
+                    
+                    // Cập nhật giao diện để thông báo đã nhận tiền
+                    $('#payment-wait-message')
+                        .html('<i class="fas fa-check-circle text-success"></i> Đã nhận được thanh toán! Đang hoàn tất giao dịch...')
+                        .removeClass('text-primary').addClass('text-success');
+                    
+                    // TỰ ĐỘNG GỌI HÀM HOÀN TẤT THANH TOÁN
+                    setTimeout(function() {
+                        confirmQRPayment(); 
+                    }, 1000); // Đợi 1 giây cho đẹp
+                }
+            },
+            error: function() {
+                console.error("Lỗi khi kiểm tra trạng thái. Dừng lại.");
+                clearInterval(paymentStatusInterval);
+            }
+        });
+    }, 3000); // Lặp lại mỗi 3 giây
+}
+
+function confirmQRPayment() {
+    // Hiển thị loading
+    $('#confirmPaymentBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-2"></span>Đang xử lý...');
+    
+    var orderId = '@order?.OrderId';
+    var token = $('input[name="__RequestVerificationToken"]').val();
+    
+    // Lấy benefit và voucher từ Detail page
+    var benefitDiscount = parseFloat($('#appliedBenefitDiscountAmount').val()) || 0;
+    var voucherCode = $('#appliedVoucherCodeDetail').val();
+    var voucherDiscount = parseFloat($('#appliedDiscountAmountDetail').val()) || 0;
+    var totalDiscount = benefitDiscount + voucherDiscount;
+    
+    console.log('=== PAYMENT DEBUG START ===');
+    console.log('Order ID:', orderId);
+    console.log('Token:', token);
+    console.log('Benefit Discount:', benefitDiscount);
+    console.log('Voucher Code:', voucherCode);
+    console.log('Voucher Discount:', voucherDiscount);
+    console.log('Total Discount:', totalDiscount);
+    console.log('Token exists:', token ? 'YES' : 'NO');
+    console.log('URL:', '@Url.Action("CheckoutQR", "Order")');
+    
+    // Gọi API xác nhận thanh toán
+    $.ajax({
+        url: '@Url.Action("CheckoutQR", "Order")',
+        type: 'POST',
+        data: {
+            orderId: orderId,
+            voucherCode: voucherCode,
+            discountAmount: totalDiscount,  // Gửi tổng discount (benefit + voucher)
+            __RequestVerificationToken: token
+        },
+        success: function(response) {
+            console.log('=== PAYMENT SUCCESS ===');
+            console.log('Response:', response);
+            console.log('Success status:', response.success);
+            
+            // Alert để debug
+            alert('Thanh toán thành công!\nOrder: ' + (response.orderNumber || '@order?.OrderNumber'));
+            
+            // Đóng modal QR
+            $('#qrPaymentModal').modal('hide');
+            
+            // Hiển thị modal cảm ơn với hiệu ứng
+            $('#thank-you-order-number').text(response.orderNumber || '@order?.OrderNumber');
+            $('#thankYouModal').modal('show');
+            
+            // Tạo hiệu ứng confetti
+            createConfetti();
+            
+        },
+        error: function(xhr, status, error) {
+            console.log('=== PAYMENT ERROR ===');
+            console.error('XHR:', xhr);
+            console.error('Status:', status);
+            console.error('Error:', error);
+            console.error('Response Text:', xhr.responseText);
+            
+            // Alert để debug
+            alert('LỖI THANH TOÁN!\nStatus: ' + status + '\nError: ' + error + '\n\nXem Console (F12) để biết chi tiết');
+            
+            // Ngay cả khi có lỗi, vẫn coi là thành công (theo yêu cầu)
+            $('#qrPaymentModal').modal('hide');
+            $('#thank-you-order-number').text('@order?.OrderNumber');
+            $('#thankYouModal').modal('show');
+            createConfetti();
+            
+        }
+    });
+}
+
+function closeThankYou() {
+    $('#thankYouModal').modal('hide');
+    window.location.href = '@Url.Action("Index", "TableManagement")';
+}
+
+function createConfetti() {
+    // Tạo hiệu ứng pháo hoa đơn giản
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
+
+    function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+            return clearInterval(interval);
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+
+        // Create confetti particles
+        for(let i = 0; i < 5; i++) {
+            const particle = document.createElement('div');
+            particle.style.position = 'fixed';
+            particle.style.width = '10px';
+            particle.style.height = '10px';
+            particle.style.backgroundColor = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#48bb78'][Math.floor(Math.random() * 5)];
+            particle.style.left = Math.random() * window.innerWidth + 'px';
+            particle.style.top = '-10px';
+            particle.style.borderRadius = '50%';
+            particle.style.zIndex = '9999';
+            particle.style.pointerEvents = 'none';
+            
+            document.body.appendChild(particle);
+            
+            const fall = particle.animate([
+                { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+                { transform: `translateY(${window.innerHeight}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+            ], {
+                duration: 2000 + Math.random() * 1000,
+                easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+            });
+            
+            fall.onfinish = () => particle.remove();
+        }
+    }, 250);
+}
+
+$('#paidAmount').on('input', function() {
+    var paid = parseFloat($(this).val()) || 0;
+    var total = @(order?.BalanceDue ?? 0);
+    var change = paid - total;
+    $('#changeAmount').text(change >= 0 ? change.toLocaleString() + ' VND' : 'Không đủ tiền');
+    $('#changeAmount').removeClass('text-success text-danger');
+    $('#changeAmount').addClass(change >= 0 ? 'text-success' : 'text-danger');
+});
+</script>
+
+@{
+    string GetStatusBadgeClass(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Open => "badge-warning",
+            OrderStatus.Confirmed => "badge-info",
+            OrderStatus.InPreparation => "badge-primary",
+            OrderStatus.Ready => "badge-success",
+            OrderStatus.Served => "badge-secondary",
+            OrderStatus.Paid => "badge-dark",
+            _ => "badge-light"
+        };
+    }
+
+    string GetItemStatusBadgeClass(OrderItemStatus status)
+    {
+        return status switch
+        {
+            OrderItemStatus.Pending => "badge bg-warning text-dark",
+            OrderItemStatus.Preparing => "badge bg-info text-white",
+            OrderItemStatus.Ready => "badge bg-success text-white",
+            OrderItemStatus.Served => "badge bg-secondary text-white",
+            OrderItemStatus.Cancelled => "badge bg-danger text-white",
+            _ => "badge bg-light text-dark"
+        };
+    }
+
+    string GetItemStatusDisplayName(OrderItemStatus status)
+    {
+        return status switch
+        {
+            OrderItemStatus.Pending => "Chờ xử lý",
+            OrderItemStatus.Preparing => "Đang chuẩn bị",
+            OrderItemStatus.Ready => "Sẵn sàng",
+            OrderItemStatus.Served => "Đã phục vụ",
+            OrderItemStatus.Cancelled => "Đã hủy",
+            _ => status.ToString()
+        };
+    }
+
+    string GetStatusDisplayName(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Open => "Mới tạo",
+            OrderStatus.Confirmed => "Đã xác nhận",
+            OrderStatus.InPreparation => "Đang chuẩn bị",
+            OrderStatus.Ready => "Sẵn sàng",
+            OrderStatus.Served => "Đã phục vụ",
+            OrderStatus.Paid => "Đã thanh toán",
+            OrderStatus.Cancelled => "Đã hủy",
+            OrderStatus.Refunded => "Đã hoàn tiền",
+            _ => status.ToString()
+        };
+    }
+
+    string GetOrderSourceDisplayName(OrderSource source)
+    {
+        return source switch
+        {
+            OrderSource.Pos => "Tại quầy",
+            OrderSource.MobileApp => "Ứng dụng",
+            OrderSource.Web => "Website",
+            OrderSource.Phone => "Điện thoại",
+            OrderSource.ThirdParty => "Đối tác",
+            _ => source.ToString()
+        };
+    }
+}

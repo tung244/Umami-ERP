@@ -1,0 +1,116 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var threshold = ViewBag.Threshold as StockAlertThreshold;
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">@ViewBag.Title</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <!-- Thông tin sản phẩm (read-only) -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Sản phẩm</label>
+                                    <input type="text" class="form-control" value="@threshold?.InventoryItem?.Name" readonly />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">SKU</label>
+                                    <input type="text" class="form-control" value="@threshold?.InventoryItem?.Sku" readonly />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Số lượng hiện tại</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" value="@threshold?.InventoryItem?.CurrentQuantity" readonly />
+                                        <span class="input-group-text">@threshold?.InventoryItem?.Unit</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Mức tồn kho tối thiểu</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" value="@threshold?.InventoryItem?.ReorderLevel" readonly />
+                                        <span class="input-group-text">@threshold?.InventoryItem?.Unit</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <!-- Cấu hình cảnh báo -->
+                        <h6 class="mb-3 fw-bold">Cấu hình cảnh báo</h6>
+
+                        <!-- Ngưỡng cảnh báo -->
+                        <div class="mb-3">
+                            <label for="minimumThreshold" class="form-label fw-bold">Ngưỡng cảnh báo <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" id="minimumThreshold" name="minimumThreshold" class="form-control" 
+                                       min="0" step="0.01" value="@threshold?.MinimumThreshold" required />
+                                <span class="input-group-text">@threshold?.InventoryItem?.Unit</span>
+                            </div>
+                            <small class="form-text text-muted">Nhập 0 để dùng ngưỡng global</small>
+                        </div>
+
+                        <!-- Email cảnh báo -->
+                        <div class="mb-3">
+                            <label for="alertEmails" class="form-label fw-bold">Email cảnh báo</label>
+                            <textarea id="alertEmails" name="alertEmails" class="form-control" rows="3" 
+                                      placeholder="email1@example.com, email2@example.com">@threshold?.AlertEmails</textarea>
+                            <small class="form-text text-muted">Để trống để sử dụng email global</small>
+                        </div>
+
+                        <!-- Bật/Tắt -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isEnabled" name="isEnabled" 
+                                       value="true" @(threshold?.IsEnabled == true ? "checked" : "") />
+                                <label class="form-check-label" for="isEnabled">
+                                    <strong>Bật cảnh báo cho sản phẩm này</strong>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Thông tin cập nhật gần đây -->
+                        <div class="alert alert-secondary mt-4">
+                            <small>
+                                @{
+                                    var createdStr = threshold?.CreatedAt.ToString("g") ?? "-";
+                                    var updatedStr = threshold?.UpdatedAt != null ? threshold.UpdatedAt?.ToString("g") : "";
+                                }
+                                Tạo lúc: <strong>@createdStr</strong>
+                                @if (!string.IsNullOrEmpty(updatedStr))
+                                {
+                                    <text><br />Cập nhật lúc: <strong>@updatedStr</strong></text>
+                                }
+                            </small>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning w-50">
+                                <i class="fas fa-save"></i> Cập nhật
+                            </button>
+                            <a href="@Url.Action("Index")" class="btn btn-secondary w-50">
+                                <i class="fas fa-arrow-left"></i> Quay lại
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

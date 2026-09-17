@@ -1,0 +1,34 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var shift = ViewBag.Item as Shift;
+
+}
+@if(shift != null)
+{
+    <div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Tên ca</dt>
+            <dd class="col-sm-9">@shift?.Name</dd>
+
+            <dt class="col-sm-3">Chi nhánh</dt>
+            <dd class="col-sm-9">@shift?.Branch?.Name</dd>
+
+            <dt class="col-sm-3">Giờ bắt đầu</dt>
+            <dd class="col-sm-9">@shift?.StartTime.ToString(@"hh\:mm")</dd>
+
+            <dt class="col-sm-3">Giờ kết thúc</dt>
+            <dd class="col-sm-9">@shift?.EndTime.ToString(@"hh\:mm")</dd>
+
+            <dt class="col-sm-3">Ngày tạo</dt>
+            <dd class="col-sm-9">@shift?.CreatedAt.ToString("dd/MM/yyyy")</dd>
+
+            <dt class="col-sm-3">Cập nhật lần cuối</dt>
+            <dd class="col-sm-9">@(shift?.UpdatedAt?.ToString("dd/MM/yyyy") ?? "-")</dd>
+        </dl>
+        <a href="@Url.Action("Edit", new { id = shift?.ShiftId })" class="btn btn-warning">Sửa</a>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Quay lại</a>
+    </div>
+</div>
+}

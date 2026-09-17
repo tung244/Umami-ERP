@@ -1,0 +1,398 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var order = ViewBag.Order as Order;
+    var branch = ViewBag.Branch as Branch;
+    Layout = null; // Không dùng layout để dễ in
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Hóa đơn - @order?.OrderNumber</title>
+    <style>
+        @@media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .invoice-container {
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .invoice-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #2196F3;
+            padding-bottom: 20px;
+        }
+
+        .restaurant-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1976D2;
+            margin-bottom: 5px;
+        }
+
+        .restaurant-info {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            text-transform: uppercase;
+            color: #333;
+        }
+
+        .invoice-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .invoice-meta-section {
+            flex: 1;
+        }
+
+        .invoice-meta-section h4 {
+            font-size: 14px;
+            color: #1976D2;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .invoice-meta-section p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .items-table thead {
+            background: #1976D2;
+            color: white;
+        }
+
+        .items-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .items-table tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        .text-right {
+            text-align: right !important;
+        }
+
+        .text-center {
+            text-align: center !important;
+        }
+
+        .totals-section {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .totals-table {
+            width: 300px;
+        }
+
+        .totals-table tr td {
+            padding: 8px 12px;
+        }
+
+        .totals-table tr td:first-child {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .totals-table tr td:last-child {
+            text-align: right;
+            font-weight: 500;
+        }
+
+        .total-row {
+            border-top: 2px solid #1976D2;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1976D2;
+        }
+
+        .payment-info {
+            margin-top: 30px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+        }
+
+        .payment-info h4 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+
+        .footer-note {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+
+        .footer-note h4 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+
+        .print-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 30px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .print-button:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .download-button {
+            position: fixed;
+            bottom: 30px;
+            right: 200px;
+            padding: 15px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="invoice-header">
+            <div class="restaurant-name">@(branch?.Name ?? "TungDZ Restaurant")</div>
+            <div class="restaurant-info">
+                @if (branch != null)
+                {
+                    <div>@branch.Address</div>
+                    <div>SĐT: @branch.Phone</div>
+                }
+                else
+                {
+                    <div>Địa chỉ: Số 123, Đường ABC, Quận XYZ, TP.HCM</div>
+                    <div>SĐT: 0828959442 | Email: contact@tungdz.com</div>
+                }
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="invoice-title">HÓA ĐƠN BÁN HÀNG</div>
+
+        <!-- Meta Info -->
+        <div class="invoice-meta">
+            <div class="invoice-meta-section">
+                <h4>Thông tin đơn hàng</h4>
+                <p><strong>Số hóa đơn:</strong> @order?.OrderNumber</p>
+                <p><strong>Ngày:</strong> @order?.PlacedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                <p><strong>Bàn:</strong> @(order?.Table?.Name ?? "N/A")</p>
+                <p><strong>Nhân viên:</strong> @(order?.CreatedByStaff?.FullName ?? "N/A")</p>
+            </div>
+
+            @if (order?.Customer != null)
+            {
+                <div class="invoice-meta-section">
+                    <h4>Thông tin khách hàng</h4>
+                    <p><strong>Tên:</strong> @order.Customer.FullName</p>
+                    @if (!string.IsNullOrEmpty(order.Customer.PhoneNumber))
+                    {
+                        <p><strong>SĐT:</strong> @order.Customer.PhoneNumber</p>
+                    }
+                    @if (!string.IsNullOrEmpty(order.Customer.Email))
+                    {
+                        <p><strong>Email:</strong> @order.Customer.Email</p>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Món ăn</th>
+                    <th class="text-center">SL</th>
+                    <th class="text-right">Đơn giá</th>
+                    <th class="text-right">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (order?.OrderItems != null)
+                {
+                    int index = 1;
+                    foreach (var item in order.OrderItems)
+                    {
+                        <tr>
+                            <td class="text-center">@index</td>
+                            <td>
+                                @item.Dish?.Name
+                                @if (!string.IsNullOrEmpty(item.SpecialInstructions))
+                                {
+                                    <br /><small style="color: #666;">Ghi chú: @item.SpecialInstructions</small>
+                                }
+                            </td>
+                            <td class="text-center">@item.Quantity</td>
+                            <td class="text-right">@item.UnitPrice.ToString("N0") đ</td>
+                            <td class="text-right">@item.LineTotal.ToString("N0") đ</td>
+                        </tr>
+                        index++;
+                    }
+                }
+            </tbody>
+        </table>
+
+        <!-- Totals -->
+        <div class="totals-section">
+            <table class="totals-table">
+                <tr>
+                    <td>Tạm tính:</td>
+                    <td>@order?.SubTotal.ToString("N0") đ</td>
+                </tr>
+                @if (order?.DiscountAmount > 0)
+                {
+                    <tr>
+                        <td>Giảm giá:</td>
+                        <td style="color: #f44336;">-@order.DiscountAmount.ToString("N0") đ</td>
+                    </tr>
+                }
+                @if (order?.TaxAmount > 0)
+                {
+                    <tr>
+                        <td>Thuế VAT:</td>
+                        <td>@order.TaxAmount.ToString("N0") đ</td>
+                    </tr>
+                }
+                @if (order?.ServiceChargeAmount > 0)
+                {
+                    <tr>
+                        <td>Phí dịch vụ:</td>
+                        <td>@order.ServiceChargeAmount.ToString("N0") đ</td>
+                    </tr>
+                }
+                <tr class="total-row">
+                    <td>TỔNG CỘNG:</td>
+                    <td>@order?.TotalAmount.ToString("N0") đ</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Payment Info -->
+        @if (order?.Payments != null && order.Payments.Any())
+        {
+            <div class="payment-info">
+                <h4>Thông tin thanh toán</h4>
+                @foreach (var payment in order.Payments)
+                {
+                    <p>
+                        <strong>Phương thức:</strong> 
+                        @(payment.PaymentMethod switch
+                        {
+                            PaymentMethod.Cash => "Tiền mặt",
+                            PaymentMethod.Card => "Thẻ",
+                            PaymentMethod.Qr => "QR Code",
+                            PaymentMethod.EWallet => "Ví điện tử",
+                            _ => payment.PaymentMethod.ToString()
+                        })
+                        | <strong>Số tiền:</strong> @payment.Amount.ToString("N0") đ
+                        | <strong>Thời gian:</strong> @payment.PaymentDate.ToString("dd/MM/yyyy HH:mm")
+                    </p>
+                }
+                <p style="margin-top: 10px; font-size: 16px;">
+                    <strong>Đã thanh toán:</strong> @order.PaidAmount.ToString("N0") đ
+                </p>
+            </div>
+        }
+
+        <!-- Footer -->
+        <div class="footer-note">
+            <h4>Cảm ơn quý khách!</h4>
+            <p>Hẹn gặp lại quý khách!</p>
+            <p style="margin-top: 10px; font-size: 12px;">
+                Hóa đơn được in lúc: @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")
+            </p>
+        </div>
+    </div>
+
+    <!-- Action Buttons (không in ra) -->
+    <button onclick="window.print()" class="print-button no-print">
+        <i class="fas fa-print"></i> In hóa đơn
+    </button>
+    
+    <a href="@Url.Action("DownloadPDF", new { orderId = order?.OrderId })" class="download-button no-print">
+        <i class="fas fa-file-pdf"></i> Tải PDF
+    </a>
+
+    <script>
+        // Auto print khi load trang (tùy chọn)
+        // window.onload = function() { window.print(); }
+    </script>
+</body>
+</html>

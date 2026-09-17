@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <partial name="~/Views/Shared/Partials/_Head.cshtml" />
+
+    <!-- ==== CSS KITCHEN CARD STYLE ==== -->
+    <style>
+        /* ======= TICKET GRID ======= */
+        .ticket-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
+        }
+
+        /* ======= TICKET CARD (HIỆU ỨNG XÉ GIẤY) ======= */
+        .ticket-card {
+            position: relative;
+            background: #fff;
+            border-radius: 16px;
+            padding-bottom: 0;
+            overflow: visible;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e5e5e5;
+
+            /* Hiệu ứng răng cưa bên trái */
+            clip-path: polygon(0% 0%,
+                    100% 0%,
+                    100% calc(100% - 12px),
+                    0% calc(100% - 12px));
+        }
+
+        /* ======= LỖ ĐỤC HAI BÊN ======= */
+        .ticket-card::before,
+        .ticket-card::after {
+            content: "";
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: #f5f5f5;
+            border-radius: 50%;
+            left: -11px;
+            border: 1px solid #ddd;
+        }
+
+        .ticket-card::before {
+            top: 65px;
+        }
+
+        .ticket-card::after {
+            bottom: 65px;
+        }
+
+        /* ======= ĐƯỜNG XÉ GIẤY (DASH LINE) ======= */
+        .ticket-dashed {
+            border-bottom: 2px dashed #ccc;
+            margin: 0 16px;
+        }
+
+        /* ======= HEADER ======= */
+        .ticket-header {
+            padding: 16px 20px;
+            color: #fff;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .ticket-header.eat-in {
+            background: linear-gradient(135deg, #009688, #00796B);
+        }
+
+        .ticket-header.delivery {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+        }
+
+        .ticket-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .ticket-sub {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* ======= BODY ======= */
+        .ticket-body {
+            padding: 18px 20px;
+            font-size: 16px;
+        }
+
+        /* món */
+        .ticket-dish {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .ticket-info {
+            font-size: 14px;
+            color: #555;
+        }
+
+        /* ======= FOOTER ======= */
+        .ticket-footer {
+            padding: 14px 20px;
+            background: #fafafa;
+            border-radius: 0 0 16px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ticket-actions {
+            display: flex;
+            gap: 6px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <main>
+        <div class="container-fluid p-3">
+            @RenderBody()
+        </div>
+    </main>
+
+    <partial name="~/Views/Shared/Partials/_Scripts.cshtml" />
+    <partial name="~/Views/Shared/Partials/_Toast.cshtml" />
+    @RenderSection("Scripts", required: false)
+</body>
+
+</html>

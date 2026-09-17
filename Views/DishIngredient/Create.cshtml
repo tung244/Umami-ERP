@@ -1,0 +1,51 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var dish = ViewBag.Dish as Dish;
+    var availableItems = ViewBag.AvailableItems as List<InventoryItem>;
+}
+
+@if (dish != null)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Món ăn</h5>
+            <p class="card-text">@dish.Name</p>
+        </div>
+    </div>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="dishId" value="@dish.DishId" />
+
+        <div class="mb-3">
+            <label for="inventoryItemId" class="form-label">Nguyên liệu</label>
+            <select id="inventoryItemId" name="inventoryItemId" class="form-select" required>
+                <option value="">Chọn nguyên liệu</option>
+                @if (availableItems != null)
+                {
+                    @foreach (var item in availableItems)
+                    {
+                        <option value="@item.ItemId">@item.Name (@item.Unit)</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="quantityPerPortion" class="form-label">Số lượng trên 1 portion</label>
+            <input type="number" step="0.01" id="quantityPerPortion" name="quantityPerPortion" class="form-control" required />
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" id="isOptional" name="isOptional" class="form-check-input" />
+            <label for="isOptional" class="form-check-label">Là nguyên liệu tùy chọn</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Thêm nguyên liệu</button>
+        <a href="@Url.Action("Index", new { dishId = dish.DishId })" class="btn btn-secondary">Hủy</a>
+    </form>
+}
+else
+{
+    <h1>Không tìm thấy món ăn</h1>
+}

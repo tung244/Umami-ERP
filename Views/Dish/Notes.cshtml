@@ -1,0 +1,407 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    Layout = "~/Views/Shared/_LayoutOrder.cshtml";
+    var dishes = ViewBag.Dishes as List<Dish> ?? new List<Dish>();
+    var categories = ViewBag.Categories as List<Category> ?? new List<Category>();
+    var table = ViewBag.Table as RestaurantTable;
+    Guid? tableId = ViewBag.TableId is Guid id ? id : (Guid?)null;
+    int cartCount = ViewBag.CartCount is int count ? count : 0;
+}
+
+<div class="container mt-4">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h3 mb-1">@ViewBag.Title</h1>
+            @if (table != null)
+            {
+                <div class="text-muted">
+                    Bàn @table.Name · Chi nhánh @table.Branch?.Name
+                </div>
+            }
+            else
+            {
+                <div class="text-muted">
+                    Vui lòng quét mã QR tại bàn để đặt món và theo dõi đơn hàng trực tiếp.
+                </div>
+            }
+        </div>
+        <div class="col text-end">
+            <span class="badge bg-primary">Giỏ hàng: <span id="cartCountBadge">@cartCount</span> món</span>
+        </div>
+    </div>
+
+    @if (table != null)
+    {
+        <div class="row mb-4">
+            <div class="col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="fw-bold text-primary mb-1">Thông tin bàn</div>
+                        <div class="text-muted">Tên bàn: @table.Name</div>
+                        <div class="text-muted">Sức chứa: @table.Seats người</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="fw-bold text-primary mb-1">Chi nhánh</div>
+                        <div class="text-muted">@table.Branch?.Name</div>
+                        <div class="text-muted">@table.Branch?.Address</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="fw-bold text-primary mb-1">Thời gian</div>
+                        <div class="text-muted">@DateTime.Now.ToString("HH:mm dd/MM/yyyy")</div>
+                        <div class="text-muted">Nhân viên sẽ xác nhận ngay khi nhận đơn.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-filter="all">Tất cả</button>
+                        @foreach (var category in categories)
+                        {
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-filter="@category.CategoryId">
+                                @category.Name
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="row" id="dishList">
+                @foreach (var dish in dishes)
+                {
+                    var categoryId = dish.CategoryId.HasValue ? dish.CategoryId.Value.ToString() : "none";
+                    <div class="col-md-4 mb-4" data-category="@categoryId" data-dish-id="@dish.DishId">
+                        <div class="card h-100">
+                            @if (!string.IsNullOrEmpty(dish.ImageUrl))
+                            {
+                                <img src="@dish.ImageUrl" class="card-img-top" alt="@dish.Name">
+                            }
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">@dish.Name</h5>
+                                    @if (dish.IsAvailableOnline)
+                                    {
+                                        <span class="badge bg-success">Có sẵn</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Tạm dừng</span>
+                                    }
+                                </div>
+                                <div class="fw-bold text-primary mb-2">@dish.DefaultServingPrice.ToString("N0")₫</div>
+                                @if (!string.IsNullOrWhiteSpace(dish.Description))
+                                {
+                                    <p class="text-muted small flex-grow-1">@dish.Description</p>
+                                }
+                                else
+                                {
+                                    <div class="flex-grow-1"></div>
+                                }
+                                <button type="button" class="btn btn-primary w-100 mt-3" data-action="add" data-dish-id="@dish.DishId" @(dish.Active && dish.IsAvailableOnline ? string.Empty : "disabled")>
+                                    <i class="ri-shopping-cart-2-line me-1"></i>
+                                    Thêm vào giỏ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+                @if (!dishes.Any())
+                {
+                    <div class="col-12">
+                        <div class="alert alert-info text-center">
+                            Thực đơn hiện chưa có món nào khả dụng.
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Giỏ hàng của bạn</span>
+                    <span class="badge bg-primary" id="cartBadge">@cartCount</span>
+                </div>
+                <div class="card-body" id="cartItemsContainer">
+                    <div class="text-muted text-center" id="emptyCartMessage">Chưa có món nào trong giỏ.</div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold">Tạm tính</span>
+                        <span class="fw-bold text-primary" id="cartTotal">0₫</span>
+                    </div>
+                    <button type="button" class="btn btn-success w-100" id="checkoutBtn">
+                        <i class="ri-checkbox-circle-line me-1"></i>
+                        Đặt món
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const tableId = '@(tableId?.ToString() ?? string.Empty)';
+        const routes = {
+            addToCart: '@Url.Action("AddToCart", "PublicOrder")',
+            updateCart: '@Url.Action("UpdateCartItem", "PublicOrder")',
+            removeCart: '@Url.Action("RemoveFromCart", "PublicOrder")',
+            cartSummary: '@Url.Action("CartSummary", "PublicOrder")',
+            checkout: '@Url.Action("Checkout", "PublicOrder")'
+        };
+
+        function notify(message, isError = false) {
+            if (window.bootstrap) {
+                const alertPlaceholder = document.createElement('div');
+                alertPlaceholder.className = `alert ${isError ? 'alert-danger' : 'alert-success'} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+                alertPlaceholder.style.zIndex = '1055';
+                alertPlaceholder.innerHTML = `
+                    <div>${message}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                document.body.appendChild(alertPlaceholder);
+                setTimeout(() => {
+                    const alert = bootstrap.Alert.getOrCreateInstance(alertPlaceholder);
+                    alert.close();
+                }, 2500);
+            } else {
+                alert(message);
+            }
+        }
+
+        function toCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
+        }
+
+        function loadCart() {
+            fetch(routes.cartSummary)
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById('cartItemsContainer');
+                    const emptyMessage = document.getElementById('emptyCartMessage');
+                    const totalEl = document.getElementById('cartTotal');
+                    const badge = document.getElementById('cartBadge');
+                    const countBadge = document.getElementById('cartCountBadge');
+
+                    container.innerHTML = '';
+                    container.appendChild(emptyMessage);
+
+                    if (!data.success || !data.items.length) {
+                        emptyMessage.style.display = 'block';
+                        totalEl.textContent = '0₫';
+                        badge.textContent = '0';
+                        countBadge.textContent = '0';
+                        document.getElementById('checkoutBtn').disabled = true;
+                        return;
+                    }
+
+                    emptyMessage.style.display = 'none';
+                    let totalCount = 0;
+
+                    data.items.forEach(item => {
+                        totalCount += item.quantity;
+                        const row = document.createElement('div');
+                        row.className = 'mb-3 border-bottom pb-2';
+                        row.setAttribute('data-dish-id', item.dishId);
+                        row.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">${item.name}</div>
+                                    <div class="text-muted small">${toCurrency(item.unitPrice)}</div>
+                                </div>
+                                <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" data-dish-id="${item.dishId}">
+                                    <i class="ri-close-line"></i>
+                                </button>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Số lượng món">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="decrease" data-dish-id="${item.dishId}" aria-label="Giảm"> <i class="ri-subtract-line"></i> </button>
+                                    <span class="btn btn-light btn-sm" data-role="quantity" role="status" aria-live="polite">${item.quantity}</span>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="increase" data-dish-id="${item.dishId}" aria-label="Tăng"> <i class="ri-add-line"></i> </button>
+                                </div>
+                                <div class="fw-bold text-primary">${toCurrency(item.total)}</div>
+                            </div>`;
+                        container.appendChild(row);
+                    });
+
+                    totalEl.textContent = toCurrency(data.total);
+                    badge.textContent = totalCount;
+                    countBadge.textContent = totalCount;
+                    document.getElementById('checkoutBtn').disabled = false;
+                })
+                .catch(() => notify('Không thể tải giỏ hàng, vui lòng thử lại.', true));
+        }
+
+        function postForm(url, payload) {
+            return fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: new URLSearchParams(payload)
+            }).then(res => res.json());
+        }
+
+        document.addEventListener('click', function (event) {
+            const target = event.target.closest('button');
+            if (!target) return;
+
+            const action = target.getAttribute('data-action');
+            const dishId = target.getAttribute('data-dish-id');
+
+            if (action === 'add' && dishId) {
+                target.disabled = true;
+                target.innerHTML = '<i class="ri-loader-4-line me-1"></i>Đang thêm...';
+                postForm(routes.addToCart, { dishId, quantity: 1 })
+                    .then(res => {
+                        if (res.success) {
+                            loadCart();
+                            notify('Đã thêm món vào giỏ.');
+                        } else {
+                            notify(res.message || 'Không thể thêm món.', true);
+                        }
+                    })
+                    .catch(() => notify('Không thể thêm món, vui lòng thử lại.', true))
+                    .finally(() => {
+                        target.disabled = false;
+                        target.innerHTML = '<i class="ri-shopping-cart-2-line me-1"></i>Thêm vào giỏ';
+                    });
+            }
+
+            if (action === 'increase' && dishId) {
+                const quantityEl = target.parentElement.querySelector('[data-role="quantity"]');
+                const current = parseInt(quantityEl.textContent, 10) || 0;
+                const newQuantity = current + 1;
+                quantityEl.textContent = newQuantity; // Update UI ngay
+                target.disabled = true;
+                postForm(routes.updateCart, { dishId, quantity: newQuantity })
+                    .then(res => {
+                        if (res.success) {
+                            loadCart(); // Refresh để đảm bảo đồng bộ
+                        } else {
+                            quantityEl.textContent = current; // Revert nếu lỗi
+                            notify(res.message || 'Không thể cập nhật số lượng.', true);
+                        }
+                    })
+                    .catch(() => {
+                        quantityEl.textContent = current; // Revert
+                        notify('Không thể cập nhật số lượng.', true);
+                    })
+                    .finally(() => target.disabled = false);
+            }
+
+            if (action === 'decrease' && dishId) {
+                const quantityEl = target.parentElement.querySelector('[data-role="quantity"]');
+                const current = parseInt(quantityEl.textContent, 10) || 0;
+                const newQuantity = current - 1;
+                if (newQuantity > 0) {
+                    quantityEl.textContent = newQuantity; // Update UI ngay
+                    target.disabled = true;
+                    postForm(routes.updateCart, { dishId, quantity: newQuantity })
+                        .then(res => {
+                            if (res.success) {
+                                loadCart();
+                            } else {
+                                quantityEl.textContent = current;
+                                notify(res.message || 'Không thể cập nhật số lượng.', true);
+                            }
+                        })
+                        .catch(() => {
+                            quantityEl.textContent = current;
+                            notify('Không thể cập nhật số lượng.', true);
+                        })
+                        .finally(() => target.disabled = false);
+                } else {
+                    // Remove item
+                    target.disabled = true;
+                    postForm(routes.removeCart, { dishId })
+                        .then(res => {
+                            if (res.success) {
+                                loadCart();
+                                notify('Đã xóa món khỏi giỏ.');
+                            } else {
+                                notify(res.message || 'Không thể xóa món.', true);
+                            }
+                        })
+                        .catch(() => notify('Không thể xóa món.', true))
+                        .finally(() => target.disabled = false);
+                }
+            }
+
+            if (action === 'remove' && dishId) {
+                target.disabled = true;
+                postForm(routes.removeCart, { dishId })
+                    .then(res => {
+                        if (res.success) {
+                            loadCart();
+                            notify('Đã xóa món khỏi giỏ.');
+                        } else {
+                            notify(res.message || 'Không thể xóa món.', true);
+                        }
+                    })
+                    .catch(() => notify('Không thể xóa món.', true))
+                    .finally(() => target.disabled = false);
+            }
+
+            if (!action && target.id === 'checkoutBtn') {
+                event.preventDefault();
+                if (!tableId) {
+                    notify('Vui lòng quét mã QR tại bàn để đặt món.', true);
+                    return;
+                }
+                window.location.href = `${routes.checkout}?tableId=${tableId}`;
+            }
+
+            if (target.hasAttribute('data-filter')) {
+                const filter = target.getAttribute('data-filter');
+                document.querySelectorAll('[data-filter]').forEach(btn => btn.classList.remove('btn-primary'));
+                target.classList.add('btn-primary');
+
+                document.querySelectorAll('#dishList [data-category]').forEach(card => {
+                    if (filter === 'all' || card.getAttribute('data-category') === filter) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadCart();
+        });
+
+        if (window.signalR) {
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl('/dishHub')
+                .build();
+
+            connection.on('ReceiveDishPreparationUpdate', function (dishId, pendingQuantity) {
+                const badge = document.querySelector(`[data-dish-id="${dishId}"] .badge.bg-success`);
+                if (badge) {
+                    badge.textContent = pendingQuantity > 0
+                        ? `Còn ${pendingQuantity}`
+                        : 'Có sẵn';
+                }
+            });
+
+            connection.start().catch(err => console.error(err.toString()));
+        }
+    </script>
+}

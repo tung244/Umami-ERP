@@ -1,0 +1,183 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var item = ViewBag.Item as InventoryItem;
+    var currentQuantity = (decimal)ViewBag.CurrentQuantity;
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">@ViewBag.Title</h4>
+                <div class="card-tools">
+                    <a href="@Url.Action("Details", new { id = item?.ItemId })" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body">
+                @if (item != null)
+                {
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary"><i class="fas fa-box"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Mặt hàng</span>
+                                    <span class="info-box-number">@item.Name</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-primary" style="width: 100%"></div>
+                                    </div>
+                                    <span class="progress-description">
+                                        SKU: @(string.IsNullOrEmpty(item.Sku) ? "N/A" : item.Sku)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon @(currentQuantity <= 0 ? "bg-danger" : currentQuantity <= item.ReorderLevel ? "bg-warning" : "bg-success")">
+                                    <i class="fas fa-warehouse"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Tồn kho hiện tại</span>
+                                    <span class="info-box-number" style="font-size: 1.3em; font-weight: bold;">@currentQuantity <span style="color: #666;">@item.Unit</span></span>
+                                    <div class="progress">
+                                        <div class="progress-bar @(currentQuantity <= 0 ? "bg-danger" : currentQuantity <= item.ReorderLevel ? "bg-warning" : "bg-success")" style="width: 100%"></div>
+                                    </div>
+                                    <span class="progress-description">
+                                        @if (currentQuantity <= 0)
+                                        {
+                                            <span class="text-danger">Hết hàng</span>
+                                        }
+                                        else if (currentQuantity <= item.ReorderLevel)
+                                        {
+                                            <span class="text-warning">Cần nhập thêm</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success">Tồn kho tốt</span>
+                                        }
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (currentQuantity <= 0)
+                    {
+                        <div class="alert alert-danger alert-dismissible">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                            <h5><i class="icon fas fa-ban"></i> Không thể xuất kho!</h5>
+                            Mặt hàng này hiện đã hết hàng trong kho. Vui lòng nhập kho trước khi xuất.
+                        </div>
+                    }
+                    else
+                    {
+                        <form method="post" class="needs-validation" novalidate>
+                            @Html.AntiForgeryToken()
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="quantity">Số lượng xuất *</label>
+                                        <input type="number" class="form-control"
+                                               id="quantity" name="quantity" min="1" max="@((int)currentQuantity)"
+                                               step="1" placeholder="Nhập số lượng..." required
+                                               data-current-quantity="@currentQuantity"
+                                               data-unit="@item.Unit" />
+                                        @Html.ValidationMessage("quantity", new { @class = "text-danger" })
+                                        <small class="form-text text-muted">Tối đa: @((int)currentQuantity) @item.Unit</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="notes">Ghi chú</label>
+                                        <textarea class="form-control" id="notes" name="notes" rows="3"
+                                                  placeholder="Nhập ghi chú (tùy chọn)..."></textarea>
+                                        <small class="form-text text-muted">Ví dụ: Xuất cho đơn hàng #123, sử dụng nội bộ</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <strong>Cảnh báo:</strong>
+                                        <ul class="mb-0 mt-2">
+                                            <li>Số lượng sẽ được trừ khỏi tồn kho hiện tại</li>
+                                            <li>Giao dịch sẽ được ghi nhận với loại "Xuất bán"</li>
+                                            <li>Sau khi xuất: @(currentQuantity - 1) @item.Unit còn lại (tối thiểu)</li>
+                                            <li>Thời gian: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-warning btn-lg">
+                                        <i class="fas fa-minus-circle"></i> Xác nhận xuất kho
+                                    </button>
+                                    <a href="@Url.Action("Details", new { id = item.ItemId })" class="btn btn-secondary btn-lg ml-2">
+                                        <i class="fas fa-times"></i> Hủy bỏ
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Không tìm thấy thông tin mặt hàng!
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        // Update remaining quantity display (safe: check element exists)
+        (function() {
+            var qtyEl = document.getElementById('quantity');
+            if (!qtyEl) return; // form not rendered (ví dụ: hết hàng)
+
+            // Use data-attributes to read server values safely
+            var currentQty = parseFloat(qtyEl.getAttribute('data-current-quantity'));
+            var unit = qtyEl.getAttribute('data-unit');
+
+            qtyEl.addEventListener('input', function() {
+                var quantity = parseInt(this.value) || 0;
+                var remaining = currentQty - quantity;
+                var warningText = document.querySelector('.alert-warning ul li:nth-child(3)');
+
+                if (warningText) {
+                    warningText.textContent = 'Sau khi xuất: ' + Math.max(0, remaining) + ' ' + unit + ' còn lại (tối thiểu)';
+                }
+            });
+        })();
+    </script>
+}

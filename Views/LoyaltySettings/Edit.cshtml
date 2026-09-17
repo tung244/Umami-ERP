@@ -1,0 +1,124 @@
+@model QuanLiKhoHang.Models.Entities.LoyaltySettings
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>@ViewBag.Title</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Loyalty")">Loyalty</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">Cấu hình</a></li>
+                        <li class="breadcrumb-item active">Chỉnh sửa</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Chỉnh sửa cấu hình</h3>
+                            <div class="card-tools">
+                                <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </a>
+                            </div>
+                        </div>
+
+                        <form method="post" class="needs-validation" novalidate>
+                            @Html.AntiForgeryToken()
+                            @Html.HiddenFor(m => m.LoyaltySettingsId)
+                            @Html.HiddenFor(m => m.SettingKey)
+                            @Html.HiddenFor(m => m.SettingName)
+                            @Html.HiddenFor(m => m.DataType)
+                            @Html.HiddenFor(m => m.CreatedAt)
+
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="SettingName">Tên cấu hình</label>
+                                    <input type="text" class="form-control" value="@Model.SettingName" disabled />
+                                    <small class="text-muted">Key: @Model.SettingKey</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="Description">Mô tả</label>
+                                    <textarea class="form-control" id="Description" name="Description" rows="2">@Model.Description</textarea>
+                                    @Html.ValidationMessage("Description", new { @class = "text-danger" })
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="SettingValue">Giá trị *</label>
+                                    @if (Model.DataType == "decimal" || Model.DataType == "number")
+                                    {
+                                        <input type="number" class="form-control" id="SettingValue" name="SettingValue" 
+                                               value="@Model.SettingValue" required step="0.01" min="0" />
+                                        <small class="text-muted">Nhập giá trị số (VND, điểm, ...)</small>
+                                    }
+                                    else if (Model.DataType == "boolean")
+                                    {
+                                        <select class="form-control" id="SettingValue" name="SettingValue" required>
+                                            <option value="true" selected="@(Model.SettingValue == "true")">Bật</option>
+                                            <option value="false" selected="@(Model.SettingValue == "false")">Tắt</option>
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <input type="text" class="form-control" id="SettingValue" name="SettingValue" 
+                                               value="@Model.SettingValue" required />
+                                    }
+                                    @Html.ValidationMessage("SettingValue", new { @class = "text-danger" })
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="IsActive" name="IsActive" 
+                                               value="true" checked="@Model.IsActive" />
+                                        <label class="custom-control-label" for="IsActive">Kích hoạt</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-footer">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Lưu thay đổi
+                                </button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary ml-2">
+                                    <i class="fas fa-times"></i> Hủy bỏ
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    </script>
+}

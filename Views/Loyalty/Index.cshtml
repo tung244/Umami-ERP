@@ -1,0 +1,235 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    int totalCustomers = ViewBag.TotalCustomers ?? 0;
+    int activeLoyaltyAccounts = ViewBag.ActiveLoyaltyAccounts ?? 0;
+    int totalTransactions = ViewBag.TotalTransactions ?? 0;
+    decimal totalPointsEarned = ViewBag.TotalPointsEarned ?? 0;
+    decimal totalPointsRedeemed = ViewBag.TotalPointsRedeemed ?? 0;
+    var tierStats = ViewBag.TierStats as List<dynamic>;
+    var topCustomers = ViewBag.TopCustomers as List<dynamic>;
+    var tierConfigs = ViewBag.TierConfigs as Dictionary<LoyaltyTier, dynamic>;
+}
+
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Chương trình tích điểm</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item">Trang chủ</li>
+                        <li class="breadcrumb-item active">Tích điểm</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <!-- Thông tin chương trình -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Giới thiệu chương trình tích điểm</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5>Chương trình tích điểm khách hàng thân thiết</h5>
+                                    <p class="text-muted">
+                                        Chương trình tích điểm của chúng tôi giúp khách hàng nhận được ưu đãi đặc biệt
+                                        khi sử dụng dịch vụ tại nhà hàng. Mỗi đơn hàng sẽ tích lũy điểm thưởng,
+                                        đổi lấy voucher giảm giá hoặc các ưu đãi khác.
+                                    </p>
+
+                                    <h6>Cách thức hoạt động:</h6>
+                                    <ul>
+                                        <li>Khách hàng đăng ký tài khoản để tham gia chương trình</li>
+                                        <li>Mỗi 10,000 VND chi tiêu sẽ nhận 1 điểm thưởng</li>
+                                        <li>Điểm thưởng có thể đổi voucher giảm giá 5%, 10%, 15%</li>
+                                        <li>Hệ thống cấp bậc: Đồng (0-99 điểm), Bạc (100-499 điểm), Vàng (500+ điểm)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <i class="fas fa-gift fa-4x text-primary mb-3"></i>
+                                        <h4>Tích điểm nhận quà</h4>
+                                        <p class="text-muted">Tham gia ngay để nhận ưu đãi hấp dẫn</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thống kê tổng quan -->
+            <div class="row">
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3>@totalCustomers</h3>
+                            <p>Tổng khách hàng</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <a href="@Url.Action("Index", "Customer")" class="small-box-footer">
+                            Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3>@activeLoyaltyAccounts</h3>
+                            <p>Tài khoản Loyalty</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="small-box-footer">&nbsp;</div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>@totalPointsEarned</h3>
+                            <p>Tổng điểm đã tích</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div class="small-box-footer">&nbsp;</div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-danger">
+                        <div class="inner">
+                            <h3>@totalPointsRedeemed.ToString("N0")</h3>
+                            <p>Điểm đã đổi</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <div class="small-box-footer">&nbsp;</div>
+                    </div>
+                </div>
+            </div>
+
+            
+
+            <!-- Top khách hàng -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Top 10 khách hàng tích điểm nhiều nhất</h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped" style="border:1px">
+                                    <thead>
+                                        <tr>
+                                            <th>Thứ tự</th>
+                                            <th>Khách hàng</th>
+                                            <th>Điểm hiện tại</th>
+                                            <th>Cấp bậc</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (topCustomers != null && topCustomers.Any())
+                                        {
+                                            for (var i =0; i< topCustomers.Count; i++)
+                                            {
+                                                var customer = topCustomers[i];
+                                                var tier = (LoyaltyTier)customer.Tier;
+                                                
+                                                // Lấy tên hạng từ database, nếu không có thì dùng tên enum
+                                                var tierLabel = "N/A";
+                                                var tierColor = "secondary";
+                                                
+                                                if (tierConfigs != null && tierConfigs.ContainsKey(tier))
+                                                {
+                                                    tierLabel = tierConfigs[tier].TierName;
+                                                    tierColor = tierConfigs[tier].Color ?? "secondary";
+                                                }
+                                                else if (tier != LoyaltyTier.None)
+                                                {
+                                                    tierLabel = tier.ToString();
+                                                }
+                                                
+                                                <tr>
+                                                    <td>
+                                                        <span>@(i+1)</span>
+                                                    </td>
+                                                    <td>
+                                                        <strong>@customer.CustomerName</strong>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge badge-warning" style="color:black">@((decimal)customer.Points) điểm</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge badge-@tierColor" style="color:black">@tierLabel</span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted">Chưa có dữ liệu</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quy tắc đổi điểm -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card card-success">
+                        <div class="card-header">
+                            <h3 class="card-title">Quy tắc đổi điểm thưởng</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Quy tắc tích điểm:</h5>
+                                    <ul>
+                                        <li>Mỗi 10,000 VND chi tiêu = 1 điểm thưởng</li>
+                                        <li>Điểm thưởng có hiệu lực vĩnh viễn</li>
+                                        <li>Điểm được tích tự động sau mỗi đơn hàng</li>
+                                        <li>Có thể xem lịch sử tích điểm trong tài khoản</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Quy tắc đổi quà:</h5>
+                                    <ul>
+                                        <li>50 điểm = Voucher giảm 5%</li>
+                                        <li>100 điểm = Voucher giảm 10%</li>
+                                        <li>150 điểm = Voucher giảm 15%</li>
+                                        <li>Voucher có hạn sử dụng 30 ngày</li>
+                                        <li>Đơn hàng tối thiểu 100,000 VND</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

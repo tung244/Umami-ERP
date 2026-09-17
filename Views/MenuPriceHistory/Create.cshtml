@@ -1,0 +1,151 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var dish = ViewBag.Dish as Dish;
+    decimal currentPrice = ViewBag.CurrentPrice != null ? (decimal)ViewBag.CurrentPrice : 0;
+    var allDishes = ViewBag.AllDishes as List<Dish>;
+    var staffList = ViewBag.StaffList as List<Staff>;
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="ri-price-tag-3-line me-2"></i>@ViewBag.Title</h5>
+    </div>
+    <div class="card-body">
+        @if (dish != null)
+        {
+            <div class="alert alert-info mb-4">
+                <h6 class="alert-heading">Thông tin hiện tại</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Món ăn:</strong> @dish.Name</p>
+                        <p class="mb-1"><strong>Giá hiện tại:</strong> <span class="text-primary fw-bold">@currentPrice.ToString("N0") VND</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Tính thuế:</strong> @(dish.Taxable ? "Có" : "Không")</p>
+                        <p class="mb-1"><strong>Có sẵn online:</strong> @(dish.IsAvailableOnline ? "Có" : "Không")</p>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <form method="post">
+            @Html.AntiForgeryToken()
+            
+            @if (dish == null && allDishes != null)
+            {
+                <div class="mb-4">
+                    <label for="selectedDish" class="form-label required">Chọn món ăn</label>
+                    <select id="selectedDish" class="form-select" onchange="window.location.href='@Url.Action("Create")?dishId=' + this.value">
+                        <option value="">-- Chọn món ăn --</option>
+                        @foreach (var d in allDishes)
+                        {
+                            <option value="@d.DishId">
+                                @(d.Sku ?? "N/A") - @d.Name (@d.DefaultServingPrice.ToString("N0") VND)
+                            </option>
+                        }
+                    </select>
+                </div>
+            }
+            else if (dish != null)
+            {
+                <input type="hidden" name="dishId" value="@dish.DishId" />
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3"><i class="ri-money-dollar-circle-line me-2"></i>Cập nhật giá</h6>
+                        
+                        <div class="mb-3">
+                            <label for="newPrice" class="form-label required">Giá mới (VND)</label>
+                            <input type="number" step="1" id="newPrice" name="newPrice" 
+                                   class="form-control" value="@currentPrice" min="0" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="effectiveFrom" class="form-label required">Hiệu lực từ</label>
+                            <input type="datetime-local" id="effectiveFrom" name="effectiveFrom" 
+                                   class="form-control" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="changedByStaffId" class="form-label">Người thay đổi</label>
+                            <select id="changedByStaffId" name="changedByStaffId" class="form-select">
+                                <option value="">-- Chọn nhân viên --</option>
+                                @if (staffList != null)
+                                {
+                                    @foreach (var staff in staffList)
+                                    {
+                                        <option value="@staff.StaffId">@staff.FirstName @staff.LastName</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Lý do thay đổi</label>
+                            <textarea id="reason" name="reason" class="form-control" rows="3" 
+                                      placeholder="Nhập lý do thay đổi giá (điều chỉnh theo thị trường, khuyến mại, v.v.)"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="mb-3"><i class="ri-file-list-line me-2"></i>Cập nhật thông tin món ăn (tùy chọn)</h6>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Mô tả</label>
+                            <textarea id="description" name="description" class="form-control" rows="2" 
+                                      placeholder="Mô tả món ăn...">@dish.Description</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="portionSize" class="form-label">Khẩu phần</label>
+                            <input type="text" id="portionSize" name="portionSize" class="form-control" 
+                                   value="@dish.PortionSize" placeholder="Ví dụ: 1 người, 500g..." />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="preparationTimeMinutes" class="form-label">Thời gian chuẩn bị (phút)</label>
+                                <input type="number" id="preparationTimeMinutes" name="preparationTimeMinutes" 
+                                       class="form-control" value="@dish.PreparationTimeMinutes" min="1" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label d-block">&nbsp;</label>
+                                <div class="form-check">
+                                    <input type="checkbox" id="taxable" name="taxable" 
+                                           class="form-check-input" @(dish.Taxable ? "checked" : "") />
+                                    <label for="taxable" class="form-check-label">Tính thuế</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" id="isAvailableOnline" name="isAvailableOnline" 
+                                           class="form-check-input" @(dish.IsAvailableOnline ? "checked" : "") />
+                                    <label for="isAvailableOnline" class="form-check-label">Có sẵn online</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="imageUrl" class="form-label">URL hình ảnh</label>
+                            <input type="url" id="imageUrl" name="imageUrl" class="form-control" 
+                                   value="@dish.ImageUrl" placeholder="https://..." />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ri-save-line me-1"></i>Cập nhật giá và thông tin
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="ri-arrow-left-line me-1"></i>Hủy
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    <i class="ri-error-warning-line me-2"></i>Vui lòng chọn món ăn để cập nhật giá.
+                </div>
+            }
+        </form>
+    </div>
+</div>

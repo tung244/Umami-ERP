@@ -1,0 +1,171 @@
+@using QuanLiKhoHang.Models.Entities
+@{
+    var items = ViewBag.Items; // Không cast, dùng dynamic
+    int page = (int)(ViewBag.CurrentPage ?? 1);
+    int total = (int)(ViewBag.TotalPages ?? 1);
+    string search = (string)(ViewBag.SearchTerm ?? "");
+    string title = (string)(ViewBag.Title ?? "Cấu hình cảnh báo tồn kho");
+}
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5></h5>
+    </div>
+
+    <!-- Form tìm kiếm -->
+    <form method="get" style="margin-bottom: 30px;">
+        <div class="row">
+            <div class="col-md-7">
+                <input type="text" name="search" class="form-control" placeholder="Tìm kiếm theo tên hoặc SKU..." value="@search" />
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-info w-100">
+                    <i class="fas fa-search"></i> Tìm
+                </button>
+            </div>
+            <div class="col-md-3">
+                <a href="@Url.Action("Create")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Tạo cảnh báo mới
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Danh sách cảnh báo -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 style="color: white;" class="mb-0">Danh sách cảnh báo tồn kho</h5>
+        </div>
+        <div class="card-body">
+            
+            @if (items?.Count > 0)
+            {
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>SKU</th>
+                            <th>Ngưỡng</th>
+                            <th>SL hiện tại</th>
+                            <th>Email cảnh báo</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in items)
+                        {
+                            var threshold = item.Threshold;
+                            var inventoryItem = item.Item;
+
+                            <tr>
+                                <td>
+                                    <strong>@inventoryItem?.Name</strong>
+                                </td>
+                                <td>
+                                    <code>@inventoryItem?.Sku</code>
+                                </td>
+                                <td>
+                                    @if (threshold?.MinimumThreshold > 0)
+                                    {
+                                        <span class="badge bg-warning text-dark">@threshold.MinimumThreshold @inventoryItem?.Unit</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Dùng global</span>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var currentQty = inventoryItem?.CurrentQuantity ?? 0;
+                                        var isLow = currentQty <= (threshold?.MinimumThreshold > 0 ? threshold.MinimumThreshold : 10);
+                                        var badgeClass = isLow ? "bg-danger" : "bg-success";
+                                    }
+                                    <span class="badge @badgeClass">@currentQty @inventoryItem?.Unit</span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(threshold?.AlertEmails))
+                                    {
+                                        <small>@threshold.AlertEmails</small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">Global</small>
+                                    }
+                                </td>
+                                <td>
+                                    @if (threshold?.IsEnabled == true)
+                                    {
+                                        <span class="badge bg-success">✓ Bật</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">✗ Tắt</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Edit", new { id = threshold?.ThresholdId })" class="btn btn-sm btn-warning" title="Chỉnh sửa">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                    <a href="@Url.Action("NotificationHistory", new { itemId = threshold?.ItemId })" class="btn btn-sm btn-info" title="Xem lịch sử thông báo">
+                                        <i class="fas fa-history"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete('@threshold?.ThresholdId')" title="Xóa">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Form delete ẩn -->
+                <form id="deleteForm" method="post" action="@Url.Action("Delete")" style="display:none;">
+                    <input type="hidden" id="deleteId" name="id" />
+                </form>
+
+                <script>
+                    function confirmDelete(id) {
+                        if (confirm('Xác nhận xóa cảnh báo này?')) {
+                            document.getElementById('deleteId').value = id;
+                            document.getElementById('deleteForm').submit();
+                        }
+                    }
+                </script>
+
+                <!-- Phân trang -->
+                @if (total > 1)
+                {
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            @for (int i = 1; i <= total; i++)
+                            {
+                                if (i == page)
+                                {
+                                    <li class="page-item active">
+                                        <span class="page-link">@i</span>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i, search = search })">@i</a>
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Chưa có cảnh báo nào được cấu hình. 
+                    <a href="@Url.Action("Create")">Tạo cảnh báo mới</a>
+                </div>
+            }
+        </div>
+    </div>
+
+    
+</div>

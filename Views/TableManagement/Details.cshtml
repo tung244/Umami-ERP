@@ -1,0 +1,284 @@
+@using QuanLiKhoHang.Models.Entities
+@using QuanLiKhoHang.Models.Enums
+@{
+    var table = ViewBag.Table as RestaurantTable;
+    var order = ViewBag.CurrentOrder as Order;
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>@ViewBag.Title</h5>
+            </div>
+            <div class="card-body">
+                <!-- Table Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p><strong>Mã bàn:</strong> @table.Code</p>
+                        <p><strong>Tên bàn:</strong> @table.Name</p>
+                        <p><strong>Chỗ ngồi:</strong> @table.Seats</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Khu vực:</strong> @(table.Area ?? "N/A")</p>
+                        <p>
+                            <strong>Trạng thái:</strong>
+                            <span class="badge @GetStatusBadgeClass(table.Status)">
+                                @GetStatusText(table.Status)
+                            </span>
+                        </p>
+                        <p><strong>Cập nhật lần cuối:</strong> @table.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")</p>
+                    </div>
+                </div>
+
+                <hr />
+
+                <!-- Current Order -->
+                @if (order != null)
+                {
+                    <h6 class="mb-3">Đơn hàng hiện tại</h6>
+                    <div class="alert alert-info">
+                        <p><strong>Số đơn:</strong> @order.OrderNumber</p>
+                        <p><strong>Thời gian đặt:</strong> @order.PlacedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                        <p>
+                            <strong>Trạng thái:</strong>
+                            <span class="badge bg-primary">
+                                @GetOrderStatusText(order.Status)
+                            </span>
+                        </p>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Món</th>
+                                    <th>Số lượng</th>
+                                    <th>Ghi chú</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in order.OrderItems)
+                                {
+                                    <tr>
+                                        <td>@item.Dish?.Name</td>
+                                        <td>@item.Quantity</td>
+                                        <td>@(item.SpecialInstructions ?? "-")</td>
+                                        <td>
+                                            <span class="badge @GetItemStatusBadgeClass(item.Status)">
+                                                @GetItemStatusText(item.Status)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>Tổng tiền:</strong> @order.TotalAmount.ToString("N0")₫
+                    </div>
+
+                    <div class="d-grid gap-2 mt-3">
+                        @if (order.Status == QuanLiKhoHang.Models.Enums.OrderStatus.Ready)
+                        {
+                            <button type="button" class="btn btn-success btn-lg" onclick="markAsServed('@table.TableId')">
+                                <i class="ri-check-line"></i> Đã phục vụ
+                            </button>
+                        }
+                        
+                        @if (order.Status == QuanLiKhoHang.Models.Enums.OrderStatus.Served)
+                        {
+                            <form method="post" action="@Url.Action("GoToCheckout", "TableManagement")">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="tableId" value="@table.TableId" />
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="ri-qr-code-line"></i> Thanh toán QR
+                                </button>
+                            </form>
+                        }
+                        
+                        @if (order.Status == QuanLiKhoHang.Models.Enums.OrderStatus.Paid)
+                        {
+                            <div class="alert alert-success">
+                                <i class="ri-check-circle-line"></i> Đơn hàng đã thanh toán
+                            </div>
+                        }
+                        
+                        <a href="@Url.Action("Details", "Order", new { id = order.OrderId })" class="btn btn-outline-info">
+                            <i class="ri-file-list-3-line"></i> Xem chi tiết đơn hàng
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info text-center">
+                        <p>Bàn này hiện không có đơn hàng đang chờ phục vụ</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6>Điều chỉnh trạng thái</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-success" onclick="updateTableStatus('@table.TableId', 'Available')">
+                        <i class="ri-checkbox-blank-circle-line"></i> Trống
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" onclick="updateTableStatus('@table.TableId', 'Occupied')">
+                        <i class="ri-checkbox-blank-circle-line"></i> Có khách
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" onclick="updateTableStatus('@table.TableId', 'Reserved')">
+                        <i class="ri-checkbox-blank-circle-line"></i> Đã đặt trước
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="updateTableStatus('@table.TableId', 'OutOfService')">
+                        <i class="ri-checkbox-blank-circle-line"></i> Ngừng sử dụng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize SignalR connection for real-time table status updates
+    if (window.signalR) {
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/dishHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("TableStatusUpdated", (data) => {
+            console.log("Table status updated:", data);
+            const tableId = '@(table.TableId)';
+            if (data.tableId === tableId) {
+                showToast(`Tất cả món đã sẵn sàng phục vụ`, 'success');
+                setTimeout(() => location.reload(), 2000);
+            }
+        });
+
+        connection.start().catch((err) => {
+            console.error("SignalR connection error:", err);
+        });
+    }
+
+    function updateTableStatus(tableId, status) {
+        fetch(`/TableManagement/UpdateTableStatus?tableId=${tableId}&status=${status}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Cập nhật trạng thái thành công', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Có lỗi xảy ra', 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Lỗi kết nối', 'error');
+        });
+    }
+
+    function markAsServed(tableId) {
+        if (!confirm('Xác nhận đã phục vụ xong cho bàn này?')) return;
+
+        fetch(`/TableManagement/MarkAsServed?tableId=${tableId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Cập nhật thành công', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Có lỗi xảy ra', 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Lỗi kết nối', 'error');
+        });
+    }
+</script>
+
+@functions {
+    private string GetStatusBadgeClass(QuanLiKhoHang.Models.Enums.TableStatus status)
+    {
+        return status switch
+        {
+            QuanLiKhoHang.Models.Enums.TableStatus.Available => "bg-success-50 text-success-600 border border-success-200",
+            QuanLiKhoHang.Models.Enums.TableStatus.Occupied => "bg-danger-50 text-danger-600 border border-danger-200",
+            QuanLiKhoHang.Models.Enums.TableStatus.Reserved => "bg-warning-50 text-warning-700 border border-warning-200",
+            QuanLiKhoHang.Models.Enums.TableStatus.OutOfService => "bg-secondary-50 text-dark border border-secondary-200",
+            _ => "bg-light text-dark border border-neutral-200"
+        };
+    }
+
+    private string GetStatusText(QuanLiKhoHang.Models.Enums.TableStatus status)
+    {
+        return status switch
+        {
+            QuanLiKhoHang.Models.Enums.TableStatus.Available => "Trống",
+            QuanLiKhoHang.Models.Enums.TableStatus.Occupied => "Có khách",
+            QuanLiKhoHang.Models.Enums.TableStatus.Reserved => "Đã đặt trước",
+            QuanLiKhoHang.Models.Enums.TableStatus.OutOfService => "Ngừng sử dụng",
+            _ => "Không xác định"
+        };
+    }
+
+    private string GetOrderStatusText(QuanLiKhoHang.Models.Enums.OrderStatus status)
+    {
+        return status switch
+        {
+            QuanLiKhoHang.Models.Enums.OrderStatus.Open => "Mở",
+            QuanLiKhoHang.Models.Enums.OrderStatus.Confirmed => "Xác nhận",
+            QuanLiKhoHang.Models.Enums.OrderStatus.InPreparation => "Đang chuẩn bị",
+            QuanLiKhoHang.Models.Enums.OrderStatus.Ready => "Sẵn sàng phục vụ",
+            QuanLiKhoHang.Models.Enums.OrderStatus.Served => "Đã phục vụ",
+            QuanLiKhoHang.Models.Enums.OrderStatus.Paid => "Đã thanh toán",
+            QuanLiKhoHang.Models.Enums.OrderStatus.Cancelled => "Đã hủy",
+            QuanLiKhoHang.Models.Enums.OrderStatus.Refunded => "Hoàn lại",
+            _ => "Không xác định"
+        };
+    }
+
+    private string GetItemStatusBadgeClass(QuanLiKhoHang.Models.Enums.OrderItemStatus status)
+    {
+        return status switch
+        {
+            QuanLiKhoHang.Models.Enums.OrderItemStatus.Pending => "bg-light text-dark",
+            QuanLiKhoHang.Models.Enums.OrderItemStatus.SentToKitchen => "bg-info-50 text-info-700 border border-info-200",
+            QuanLiKhoHang.Models.Enums.OrderItemStatus.Preparing => "bg-warning-50 text-warning-700 border border-warning-200",
+            QuanLiKhoHang.Models.Enums.OrderItemStatus.Ready => "bg-success-50 text-success-600 border border-success-200",
+            QuanLiKhoHang.Models.Enums.OrderItemStatus.Served => "bg-primary-50 text-primary-600 border border-primary-200",
+            _ => "bg-secondary-50 text-dark border border-secondary-200"
+        };
+    }
+
+    private string GetItemStatusText(QuanLiKhoHang.Models.Enums.OrderItemStatus status)
+    {
+        return status switch
+        {
+            QuanLiKhoHang.Models.Enums.OrderItemStatus.Pending => "Chờ xác nhận",
+            QuanLiKhoHang.Models.Enums.OrderItemStatus.SentToKitchen => "Gửi bếp",
+            QuanLiKhoHang.Models.Enums.OrderItemStatus.Preparing => "Đang chuẩn bị",
+            QuanLiKhoHang.Models.Enums.OrderItemStatus.Ready => "Sẵn sàng",
+            QuanLiKhoHang.Models.Enums.OrderItemStatus.Served => "Đã phục vụ",
+            _ => "Không xác định"
+        };
+    }
+}
